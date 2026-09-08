@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 460ea6d5194a28a4384791b448d16a0d
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 331318
+  packageName: Free - Low Poly Weapon Pack
+  packageVersion: 1.0
+  assetPath: Assets/Free - Low Poly Weapon Pack/Materials/ImphenziaPixPal_URP.shadergraph
+  uploadId: 783726
