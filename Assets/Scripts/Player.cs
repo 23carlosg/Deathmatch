@@ -11,7 +11,7 @@ public class Player : MonoBehaviour
     void Update()
 
     {
-        float horizontal = 0f; //guardda la direccion del movimiento
+        float horizontal = 0f; //guarda la direccion del movimiento
         float vertical = 0f;
 
         if (Keyboard.current != null) //verifica si se detecta el teclado

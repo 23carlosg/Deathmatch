@@ -1,0 +1,6 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement enabled="false" name="Hotbar" style="flex-grow: 1; opacity: 1; position: absolute; top: 1288px; left: 968px; right: 1472px; bottom: 37px; background-color: rgba(0, 0, 0, 0.427);"/>
+    <ui:VisualElement enabled="false" name="Hotbar2" style="flex-grow: 1; opacity: 1; position: absolute; top: 1291px; left: 1097px; right: 1346px; bottom: 36px; background-color: rgba(0, 0, 0, 0.427);"/>
+    <ui:VisualElement enabled="false" name="Hotbar2" style="flex-grow: 1; opacity: 1; position: absolute; top: 1290px; left: 1226px; right: 1219px; bottom: 37px; background-color: rgba(0, 0, 0, 0.427);"/>
+    <ui:VisualElement enabled="false" name="Hotbar2" style="flex-grow: 1; opacity: 1; position: absolute; top: 1291px; left: 1353px; right: 1093px; bottom: 40px; background-color: rgba(0, 0, 0, 0.427);"/>
+</ui:UXML>
