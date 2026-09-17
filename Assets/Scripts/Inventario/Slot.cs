@@ -5,30 +5,29 @@ using UnityEngine.UI;
 public class Slot : MonoBehaviour
 {
     [HideInInspector] public ItemData itemData;
-    [HideInInspector] public int cantidad;
 
+    [Header("UI")]
     public Image icono;
-    private TextMeshProUGUI cantidadText;
+    public TextMeshProUGUI numberText; // Número del slot: 1, 2, 3... (se asigna desde Hotbar)
 
-    void Start()
-    {
-        cantidadText = GetComponentInChildren<TextMeshProUGUI>();
-    }
-
-    public void SetItem(ItemData itemData, int cantidad)
+    public void SetItem(ItemData itemData)
     {
         this.itemData = itemData;
-        this.cantidad = cantidad;
-           
         icono.sprite = itemData.icono;
-        cantidadText.text = cantidad.ToString();
-    }      
+    }
 
     public void ClearItem()
     {
         itemData = null;
-        cantidad = 0;
         icono.sprite = null;
-        cantidadText.text = "";
-    } 
+    }
+
+    // Asigna el número que se muestra abajo a la izquierda del slot (llamado desde Hotbar)
+    public void SetSlotNumber(int number)
+    {
+        if (numberText != null)
+        {
+            numberText.text = number.ToString();
+        }
+    }
 }

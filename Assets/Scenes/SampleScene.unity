@@ -2102,6 +2102,7 @@ GameObject:
   - component: {fileID: 142499643}
   - component: {fileID: 142499645}
   - component: {fileID: 142499644}
+  - component: {fileID: 142499646}
   m_Layer: 5
   m_Name: Slot (1)
   m_TagString: Untagged
@@ -2168,6 +2169,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 142499642}
   m_CullTransparentMesh: 1
+--- !u!114 &142499646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 142499642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 060b6af8d4963fd4cb01e45e73aeb358, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Slot
+  itemData: {fileID: 0}
+  icono: {fileID: 1144640684}
+  numberText: {fileID: 523608931}
 --- !u!1001 &143345540
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8294,7 +8310,7 @@ GameObject:
   - component: {fileID: 523608932}
   - component: {fileID: 523608931}
   m_Layer: 5
-  m_Name: Cantidad
+  m_Name: NumSlot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8339,7 +8355,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: 2
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9266,7 +9282,7 @@ GameObject:
   - component: {fileID: 567235345}
   - component: {fileID: 567235344}
   m_Layer: 5
-  m_Name: Cantidad
+  m_Name: NumSlot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9311,7 +9327,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: 3
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -16462,6 +16478,7 @@ GameObject:
   - component: {fileID: 1009520352}
   - component: {fileID: 2026091301}
   - component: {fileID: 2026091302}
+  - component: {fileID: 2026091303}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -20412,7 +20429,7 @@ GameObject:
   - component: {fileID: 1251274062}
   - component: {fileID: 1251274061}
   m_Layer: 5
-  m_Name: Cantidad
+  m_Name: NumSlot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20457,7 +20474,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 
+  m_text: 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -31501,8 +31518,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Slot
   itemData: {fileID: 0}
-  cantidad: 0
   icono: {fileID: 2013819349}
+  numberText: {fileID: 1251274061}
 --- !u!114 &1914595071
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33774,6 +33791,20 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &2026091303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1009520347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90fe40e34a9c3124f94c7791f7893fd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Hotbar
+  hotBarSlotContainer: {fileID: 140734475}
+  itemDev: {fileID: 11400000, guid: 03695f5b9ec16a94390ec8e044f73d37, type: 2}
 --- !u!1001 &2026091305
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -35529,6 +35560,7 @@ GameObject:
   - component: {fileID: 2142745574}
   - component: {fileID: 2142745576}
   - component: {fileID: 2142745575}
+  - component: {fileID: 2142745577}
   m_Layer: 5
   m_Name: Slot (2)
   m_TagString: Untagged
@@ -35595,6 +35627,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2142745573}
   m_CullTransparentMesh: 1
+--- !u!114 &2142745577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2142745573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 060b6af8d4963fd4cb01e45e73aeb358, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Slot
+  itemData: {fileID: 0}
+  icono: {fileID: 932147361}
+  numberText: {fileID: 567235344}
 --- !u!1001 &2144042068
 PrefabInstance:
   m_ObjectHideFlags: 0
