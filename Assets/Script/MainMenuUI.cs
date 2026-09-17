@@ -1,9 +1,14 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.SceneManagement;
+
 
 public class MainMenuUI : MonoBehaviour
 {
     private PanelRenderer panelRenderer;
+
+    // Referencia al NetworkLobbyManager
+    [SerializeField] private NetworkLobbyManager networkLobbyManager;
 
     // Menu principal
     private VisualElement mainMenuPanel;
@@ -17,6 +22,11 @@ public class MainMenuUI : MonoBehaviour
     private Slider volumeSlider;
     private Label volumeValue;
 
+    // Lobby
+    private VisualElement mainLobbyPanel;
+    private Button iniciarHostButton;
+    private Button iniciarClienteButton;
+
     private void Awake()
     {
         panelRenderer = GetComponent<PanelRenderer>();
@@ -29,14 +39,20 @@ public class MainMenuUI : MonoBehaviour
         // Paneles
         mainMenuPanel = root.Q<VisualElement>("MainMenuPanel");
         optionsPanel = root.Q<VisualElement>("SettingPanel");
+        mainLobbyPanel = root.Q<VisualElement>("MainLobbyPanel");
 
         optionsPanel.style.display = DisplayStyle.None;
+        mainLobbyPanel.style.display = DisplayStyle.None;
+        if (mainMenuPanel != null)
+            mainMenuPanel.style.display = DisplayStyle.Flex;
 
         // Botones
         playButton = root.Q<Button>("PlayButton");
         settingsButton = root.Q<Button>("SettingsButton");
         quitButton = root.Q<Button>("QuitButton");
         backButton = root.Q<Button>("BackButton");
+        iniciarHostButton = root.Q<Button>("IniciarHostButton");
+        iniciarClienteButton = root.Q<Button>("IniciarClienteButton");
 
         // Volumen
         volumeSlider = root.Q<Slider>("VolumeSlider");
@@ -46,6 +62,8 @@ public class MainMenuUI : MonoBehaviour
         settingsButton.clicked += OpenOptions;
         quitButton.clicked += QuitGame;
         backButton.clicked += CloseOptions;
+        iniciarHostButton.clicked += IniciarServidor;
+        iniciarClienteButton.clicked += UnirseServidor;
 
         volumeSlider.RegisterValueChangedCallback(OnVolumeChanged);
 
@@ -54,6 +72,9 @@ public class MainMenuUI : MonoBehaviour
     private void PlayGame()
     {
         Debug.Log("Comenzar Partida");
+        // Oculta el menu principal
+        mainMenuPanel.style.display = DisplayStyle.None;
+        mainLobbyPanel.style.display = DisplayStyle.Flex;
     }
 
     private void OpenOptions()
@@ -83,5 +104,19 @@ public class MainMenuUI : MonoBehaviour
     {
         if (panelRenderer != null)
             panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+    }
+    
+    // ------------------LOBBY---------------------
+
+    private void IniciarServidor()
+    {
+        SceneManager.LoadScene("SampleScene");
+        networkLobbyManager.IniciarHost();
+    }
+
+    private void UnirseServidor()
+    {
+        // llamar al script NetworkLobbyManager
+        networkLobbyManager.IniciarCliente();
     }
 }
