@@ -143,22 +143,17 @@ public class Player : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // Salud arranca en saludMaxima; solo el servidor puede escribir esto de ahora en mas.
-        if (IsServer)
-            saludRed.Value = saludMaxima;
+        if (IsServer) saludRed.Value = saludMaxima;
 
-        if (!IsOwner)
-        {
-            // instancias remotas: sin input, sin camara propia, sin crosshair.
-            // (CameraNetwork ya se encarga de apagar Camera/AudioListener/PlayerCamera)
-            return;
-        }
+        // Esto lo necesita TODO EL MUNDO (dueño y remotos), porque define el
+        // Animator Controller visible del arma equipada.
+        if (controlDeArmas != null) controlDeArmas.SetArsenal("Rifle");
 
-        // Solo el dueno arma su HUD y su arma inicial.
+        if (!IsOwner) return; // de acá para abajo, solo el dueño
+
         if (mira == null) mira = Crosshair.Crear();
         if (camaraTransform != null)
             camaraTransform.localPosition = new Vector3(0f, alturaOjosDePie, -atrasCamara);
-        if (controlDeArmas != null) controlDeArmas.SetArsenal("Rifle");
     }
 
     void Update()
