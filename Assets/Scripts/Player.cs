@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,9 +10,13 @@ using UnityEngine.InputSystem;
 /// - Apuntar con click derecho, disparar con click izquierdo (raycast con danio)
 /// - Recargar con R, cambiar de arma con 1 y 2
 /// - Sincroniza las animaciones del asset: Speed, Aiming, Squat, Jump, Attack, Damage, Death
+///
+/// VERSION NETWORK: solo el dueno (IsOwner) lee input, mueve el CharacterController y
+/// controla su camara/mira. El danio se resuelve en el servidor via ServerRpc para que
+/// sea autoritativo (no se pueda hacear desde el cliente).
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
-public class Player : MonoBehaviour
+public class Player : NetworkBehaviour
 {
     [Header("Movimiento")]
     public float velocidadCaminar = 4f;
@@ -87,8 +92,15 @@ public class Player : MonoBehaviour
     float piesRelativos = 0f;   // y local donde quedan los pies del mesh (puede ser negativa)
     int framesDeAjuste = 2;     // frames iniciales en que se re-ancla el mesh al piso
 
+    // Salud sincronizada: la escribe SOLO el servidor (OwnerReadWrite lo deja tocar al dueno
+    // tambien, pero aca el danio siempre lo aplica el server via RPC, asi que queda prolijo)
+    NetworkVariable<float> saludRed = new NetworkVariable<float>(
+        100f,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
     // Propiedades para leer desde HUD u otros sistemas
-    public float Salud { get; private set; }
+    public float Salud => saludRed.Value;
     public bool EstaMuerto => muerto;
     public bool EstaAgachado => agachado;
     public bool EstaApuntando => apuntando;
@@ -118,29 +130,41 @@ public class Player : MonoBehaviour
         if (controlDeArmas == null) controlDeArmas = GetComponentInChildren<PlayerController>();
         if (animator != null) modelo = animator.transform;
 
-        if (mira == null) mira = Crosshair.Crear();
-
+        // Mediciones geometricas: son deterministicas (dependen del mesh, no de input),
+        // asi que pueden correr igual en todas las instancias sin generar desincronizacion.
         MedirModelo();
         AplicarAltura(alturaDePie);
         AjustarAlPiso();
         MedirModelo();        // re-medir tras apoyar el piso: la pose animada cambia el bounds del mesh
         AplicarAltura(alturaDePie);
-        if (camaraTransform != null)
-            camaraTransform.localPosition = new Vector3(0f, alturaOjosDePie, -atrasCamara);
 
         municionEnCargador = tamanoCargador;
-        Salud = saludMaxima;
     }
 
-    // Start (no Awake) para correr DESPUES del Awake de PlayerController: el arsenal arranca en "Empty"
-    // y nos cambia el controller sin el rifle. Forzamos Rifle para que haya arma y animaciones de disparo.
-    void Start()
+    public override void OnNetworkSpawn()
     {
+        // Salud arranca en saludMaxima; solo el servidor puede escribir esto de ahora en mas.
+        if (IsServer)
+            saludRed.Value = saludMaxima;
+
+        if (!IsOwner)
+        {
+            // instancias remotas: sin input, sin camara propia, sin crosshair.
+            // (CameraNetwork ya se encarga de apagar Camera/AudioListener/PlayerCamera)
+            return;
+        }
+
+        // Solo el dueno arma su HUD y su arma inicial.
+        if (mira == null) mira = Crosshair.Crear();
+        if (camaraTransform != null)
+            camaraTransform.localPosition = new Vector3(0f, alturaOjosDePie, -atrasCamara);
         if (controlDeArmas != null) controlDeArmas.SetArsenal("Rifle");
     }
 
     void Update()
     {
+        if (!IsOwner) return; // nadie mueve/controla avatares ajenos
+
         if (framesDeAjuste > 0)
         {
             framesDeAjuste--;
@@ -438,8 +462,18 @@ public class Player : MonoBehaviour
 
         if (acerto)
         {
-            // los enemigos implementan TakeDamage(float); si no lo tienen, no pasa nada
-            elegido.collider.SendMessageUpwards("TakeDamage", danio, SendMessageOptions.DontRequireReceiver);
+            // Si le pegamos a otro Player en red, el danio se pide al SERVIDOR (autoritativo).
+            // Si es un enemigo local (IA, no NetworkBehaviour) usamos el TakeDamage de siempre.
+            Player otroJugador = elegido.collider.GetComponentInParent<Player>();
+            if (otroJugador != null && otroJugador.IsSpawned)
+            {
+                PedirDanioServerRpc(otroJugador.NetworkObjectId, danio);
+            }
+            else
+            {
+                elegido.collider.SendMessageUpwards("TakeDamage", danio, SendMessageOptions.DontRequireReceiver);
+            }
+
             if (efectoImpacto != null)
                 Instantiate(efectoImpacto, elegido.point, Quaternion.LookRotation(elegido.normal));
         }
@@ -451,6 +485,47 @@ public class Player : MonoBehaviour
 
         // retroceso leve de la camara
         if (playerCamera != null) playerCamera.rotacionVertical += apuntando ? 0.35f : 0.6f;
+    }
+
+    // El cliente que dispara pide al servidor que aplique el danio; el servidor es quien decide
+    // si realmente baja la vida (evita que un cliente modificado se autootorgue kills).
+    [ServerRpc]
+    void PedirDanioServerRpc(ulong idObjetivo, float cantidad)
+    {
+        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(idObjetivo, out NetworkObject objetivoNO))
+            return;
+
+        Player objetivo = objetivoNO.GetComponent<Player>();
+        if (objetivo != null)
+            objetivo.AplicarDanioEnServidor(cantidad);
+    }
+
+    // Solo lo llama el servidor (desde PedirDanioServerRpc). Baja la NetworkVariable de salud,
+    // que se replica sola a todos los clientes, y avisa a la victima que reproduzca su animacion.
+    void AplicarDanioEnServidor(float cantidad)
+    {
+        if (!IsServer || muerto) return;
+
+        saludRed.Value = Mathf.Max(0f, saludRed.Value - cantidad);
+        MostrarDanioClientRpc();
+
+        if (saludRed.Value <= 0f) MorirClientRpc();
+    }
+
+    [ClientRpc]
+    void MostrarDanioClientRpc()
+    {
+        if (animator != null)
+        {
+            animator.SetInteger("DamageID", Random.Range(0, 3));
+            animator.SetTrigger("Damage");
+        }
+    }
+
+    [ClientRpc]
+    void MorirClientRpc()
+    {
+        Morir();
     }
 
     // ------------------------- RECARGA -------------------------
@@ -518,18 +593,22 @@ public class Player : MonoBehaviour
 
     // ------------------------- SALUD -------------------------
 
+    // Se mantiene para que enemigos locales (IA, no jugadores en red) puedan seguir usando
+    // SendMessageUpwards("TakeDamage", ...) como antes. Para danio de jugador a jugador se usa
+    // el camino en red (PedirDanioServerRpc -> AplicarDanioEnServidor).
     public void TakeDamage(float cantidad)
     {
         if (muerto) return;
-        Salud = Mathf.Max(0f, Salud - cantidad);
 
-        if (animator != null)
+        if (IsServer)
         {
-            animator.SetInteger("DamageID", Random.Range(0, 3));
-            animator.SetTrigger("Damage");
+            AplicarDanioEnServidor(cantidad);
         }
-
-        if (Salud <= 0f) Morir();
+        else if (IsOwner)
+        {
+            // camino de respaldo si algo le pega directo a un cliente que no es el server
+            PedirDanioServerRpc(NetworkObjectId, cantidad);
+        }
     }
 
     void Morir()
@@ -538,20 +617,28 @@ public class Player : MonoBehaviour
         apuntando = false;
         if (mira != null) mira.Mostrar(false);
         if (animator != null) animator.SetTrigger("Death");
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+
+        if (IsOwner)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 
     public void Revivir()
     {
         muerto = false;
-        Salud = saludMaxima;
+        if (IsServer) saludRed.Value = saludMaxima;
         municionEnCargador = tamanoCargador;
         velocidadHorizontal = Vector3.zero;
         velocidadVertical = 0f;
         if (animator != null) animator.Play("Idle", 0);
         if (mira != null) mira.Mostrar(true);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+
+        if (IsOwner)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 }

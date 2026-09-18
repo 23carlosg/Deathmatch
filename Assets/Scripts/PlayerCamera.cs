@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,7 +10,7 @@ using UnityEngine.InputSystem;
 /// - Esc libera / captura el mouse
 /// Todo se aplica en LateUpdate (despues de que Player movio el cuerpo).
 /// </summary>
-public class PlayerCamera : MonoBehaviour
+public class PlayerCamera : NetworkBehaviour
 {
     public Transform jugador;            // cuerpo del jugador (se asigna solo al padre si esta vacio)
     public float sensibilidad = 2f;
