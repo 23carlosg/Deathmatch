@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,7 +12,7 @@ using UnityEngine.InputSystem;
 /// - Sincroniza las animaciones del asset: Speed, Aiming, Squat, Jump, Attack, Damage, Death
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
-public class Player : MonoBehaviour
+public class Player : NetworkBehaviour
 {
     [Header("Movimiento")]
     public float velocidadCaminar = 4f;
@@ -59,6 +60,10 @@ public class Player : MonoBehaviour
     public Animator animator;                 // Animator del modelo hijo (Sci-Fi_Soldier)
     public PlayerController controlDeArmas;   // script de armas del asset
     public Crosshair mira;                    // UI de punteria (se crea sola)
+
+    // --- red ---
+    bool esLocal = true;            // false en las instancias remotas (avatares de otros jugadores)
+    Vector3 ultimaPosicionRemota;   // para estimar la velocidad del movimiento replicado
 
     // --- estado interno ---
     CharacterController controller;
@@ -132,15 +137,64 @@ public class Player : MonoBehaviour
         Salud = saludMaxima;
     }
 
+    // NGO llama a OnNetworkSpawn al instanciar el prefab como jugador de red:
+    public override void OnNetworkSpawn()
+    {
+        esLocal = IsLocalPlayer;
+        if (!esLocal)
+        {
+            ultimaPosicionRemota = transform.position;
+            ApagarLoLocal();
+        }
+        else
+        {
+            // re-asegurar lo privativo del dueño: si este objeto venia de escena y su
+            // Player murio antes, la mira quedo apagada y el cursor libre
+            if (mira != null) mira.Mostrar(true);
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
+    // En una instancia remota se apaga todo lo privativo de la maquina del dueño:
+    // camara, AudioListener, mira y la camara controlada por mouse (que pelearia girando el cuerpo).
+    void ApagarLoLocal()
+    {
+        if (camara != null)
+        {
+            camara.enabled = false;
+            AudioListener listener = camara.GetComponent<AudioListener>();
+            if (listener != null) listener.enabled = false;
+        }
+        if (playerCamera != null) playerCamera.enabled = false;
+        if (mira != null) mira.Mostrar(false);
+    }
+
+    // Margen de seguridad: cualquier instancia que NO sea del jugador local queda inerte,
+    // aunque no haya pasado por OnNetworkSpawn (ej: un Player olvidado dentro de una escena).
+    void SoloLocal()
+    {
+        if (NetworkManager.Singleton == null) return; // sin red: comportarse como siempre
+        if (!IsLocalPlayer) ApagarLoLocal();
+    }
+
     // Start (no Awake) para correr DESPUES del Awake de PlayerController: el arsenal arranca en "Empty"
     // y nos cambia el controller sin el rifle. Forzamos Rifle para que haya arma y animaciones de disparo.
     void Start()
     {
+        SoloLocal();
         if (controlDeArmas != null) controlDeArmas.SetArsenal("Rifle");
     }
 
     void Update()
     {
+        if (!esLocal)
+        {
+            // instancia remota: no recibe input ni gravedad; la posicion la trae el NetworkTransform
+            Animar();
+            return;
+        }
+
         if (framesDeAjuste > 0)
         {
             framesDeAjuste--;
@@ -495,6 +549,16 @@ public class Player : MonoBehaviour
     void Animar()
     {
         if (animator == null) return;
+
+        // En instancias remotas el CharacterController no se mueve (la posicion la trae
+        // el NetworkTransform): estimamos la velocidad con el delta de posicion replicado
+        if (!esLocal)
+        {
+            Vector3 delta = transform.position - ultimaPosicionRemota;
+            ultimaPosicionRemota = transform.position;
+            velocidadHorizontalActual = delta.magnitude / Mathf.Max(Time.deltaTime, 0.0001f);
+        }
+
         // El blend tree del asset usa: 0 = quieto, 0.5 = caminar, 1 = correr
         float normalizado = Mathf.Clamp01(velocidadHorizontalActual / velocidadCorrer);
         float valor = normalizado <= 0.05f ? 0f : (corriendo && !agachado ? 1f : 0.5f);
@@ -520,7 +584,7 @@ public class Player : MonoBehaviour
 
     public void TakeDamage(float cantidad)
     {
-        if (muerto) return;
+        if (!esLocal || muerto) return; // el daño corre en la maquina del dueño (hasta llevarlo a red)
         Salud = Mathf.Max(0f, Salud - cantidad);
 
         if (animator != null)
@@ -534,6 +598,7 @@ public class Player : MonoBehaviour
 
     void Morir()
     {
+        if (!esLocal) return; // la muerte se decide solo en la maquina del dueño
         muerto = true;
         apuntando = false;
         if (mira != null) mira.Mostrar(false);
@@ -544,6 +609,7 @@ public class Player : MonoBehaviour
 
     public void Revivir()
     {
+        if (!esLocal) return;
         muerto = false;
         Salud = saludMaxima;
         municionEnCargador = tamanoCargador;

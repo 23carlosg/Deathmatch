@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.SceneManagement;
 
 
 public class MainMenuUI : MonoBehaviour
@@ -71,7 +70,7 @@ public class MainMenuUI : MonoBehaviour
 
     private void PlayGame()
     {
-        Debug.Log("Comenzar Partida");
+        Debug.Log("[Menu] Comenzar Partida");
         // Oculta el menu principal
         mainMenuPanel.style.display = DisplayStyle.None;
         mainLobbyPanel.style.display = DisplayStyle.Flex;
@@ -96,7 +95,7 @@ public class MainMenuUI : MonoBehaviour
 
     private void QuitGame()
     {
-        Debug.Log("Salir de la partida");
+        Debug.Log("[Menu] Salir de la partida");
         Application.Quit();
     }
 
@@ -110,7 +109,8 @@ public class MainMenuUI : MonoBehaviour
 
     private void IniciarServidor()
     {
-        SceneManager.LoadScene("SampleScene");
+        // La escena de juego la carga el NetworkLobbyManager via NetworkSceneManager,
+        // para que se replique sola a cada cliente que se conecte.
         networkLobbyManager.IniciarHost();
     }
 

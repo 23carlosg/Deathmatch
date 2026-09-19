@@ -62,6 +62,9 @@ public class Crosshair : MonoBehaviour
         if (canvas != null) canvas.enabled = visible;
     }
 
+    // Estado actual del canvas (para saber si hay que re-crearla tras un cambio de escena)
+    public bool EstaVisible => canvas != null && canvas.enabled;
+
     void Aplicar()
     {
         if (patas == null) return;

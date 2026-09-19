@@ -184,7 +184,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 588194248}
-    PlayerPrefab: {fileID: 8023726299497076260, guid: 64d8e18f8a8d7a1499d3b707233d0270, type: 3}
+    PlayerPrefab: {fileID: 2321298133441418328, guid: a5966884e3ca6b74e9f590bc455c7b72, type: 3}
     Prefabs:
       NetworkPrefabsLists: []
     TickRate: 30
@@ -495,6 +495,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb20f3c083c5cef40bb2e229b80f72c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkLobbyManager
+  ipDelHost: 127.0.0.1
+  escenaDeJuego: SampleScene
+  puntosDeSpawn:
+  - {x: -134.0847, y: 1, z: 106.4802}
+  - {x: -134.0847, y: 1, z: 146.4802}
+  - {x: -134.0847, y: 1, z: 174.4802}
+  - {x: -58.08469, y: 1, z: 106.4802}
+  - {x: -58.08469, y: 1, z: -134.0847}
+  - {x: -58.08469, y: 1, z: 174.4802}
+  - {x: -94.08469, y: 1, z: 102.4802}
+  - {x: -94.08469, y: 1, z: 178.4802}
 --- !u!4 &1781342303
 Transform:
   m_ObjectHideFlags: 0
