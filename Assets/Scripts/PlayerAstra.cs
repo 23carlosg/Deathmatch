@@ -177,7 +177,7 @@ public class PlayerAstra : NetworkBehaviour
         yield return new WaitForSeconds(5f);
         if (!NetworkLobbyManager.MapaListo)
         {
-            Debug.LogWarning("[PlayerAstra] El mapa nunca avisó que estaba listo, se fuerza el movimiento igual.");
+            Debug.Log("[PlayerAstra] El mapa nunca avisó que estaba listo, se fuerza el movimiento igual.");
             NetworkLobbyManager.ForzarMapaListoSiTarda();
         }
     }
@@ -581,7 +581,7 @@ public class PlayerAstra : NetworkBehaviour
         // en el momento exacto (los Rpc no se suavizan, llegan como eventos)
         DisparoEfectuadoClientRpc(posicionDeLaBoca);
 
-        if (animator != null) animator.SetTrigger("Attack");
+        // if (animator != null) animator.SetTrigger("Attack");
 
         // retroceso: la camara empuja hacia arriba y el arma salta hacia atras y vuelve
         recoilArma = 1f;
@@ -665,7 +665,7 @@ public class PlayerAstra : NetworkBehaviour
         recoilArma = 1f;       // el remoto ve el saltito del arma en el mismo instante
         if (efectoDisparo != null)
             Instantiate(efectoDisparo, posicionDeLaBoca, Quaternion.identity);
-        if (animator != null) animator.SetTrigger("Attack");
+        //if (animator != null) animator.SetTrigger("Attack");
     }
 
     // Punto de entrada clasico (misma firma que el Player viejo) para sistemas externos de daño
@@ -692,10 +692,7 @@ public class PlayerAstra : NetworkBehaviour
         Muerto = estaMuerto;
         if (animator != null)
         {
-            // "Dead" es el nombre REAL del bool del animator AstraAnimatorFull (verificado en el
-            // .controller). "Death" queda por si alguna transicion usa el trigger, como el soldado viejo.
             animator.SetBool("Dead", Muerto);
-            if (Muerto) animator.SetTrigger("Death");
         }
 
         if (esLocal)

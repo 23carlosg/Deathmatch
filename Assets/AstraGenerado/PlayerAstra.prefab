@@ -86,6 +86,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3964529395190322474, guid: 64d8e18f8a8d7a1499d3b707233d0270, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4708112707285721012, guid: 64d8e18f8a8d7a1499d3b707233d0270, type: 3}
       propertyPath: m_InScenePlaced
       value: 0
@@ -140,6 +144,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4823687974358680364, guid: 64d8e18f8a8d7a1499d3b707233d0270, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6666937192432650369, guid: 64d8e18f8a8d7a1499d3b707233d0270, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8023726299497076260, guid: 64d8e18f8a8d7a1499d3b707233d0270, type: 3}

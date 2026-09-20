@@ -14,10 +14,10 @@ public class NetworkLobbyManager : MonoBehaviour
     [Header("Puntos de spawn (coordenadas del mapa)")]
     [SerializeField] private Vector3[] puntosDeSpawn = new Vector3[]
     {
-        new Vector3(0f, 1f, 0f),
-        new Vector3(4f, 1f, 0f),
-        new Vector3(-4f, 1f, 0f),
-        new Vector3(0f, 1f, 4f),
+        new Vector3(-58, 0, 178),
+        new Vector3(-58, 0, 102),
+        new Vector3(-134, 0, 102),
+        new Vector3(-134, 0, 178),
     };
 
     int siguienteSpawn = 0;
@@ -166,7 +166,7 @@ public class NetworkLobbyManager : MonoBehaviour
     void ConfigurarTransporte()
     {
         var transporte = GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
-        if (transporte == null) transporte = FindObjectOfType<Unity.Netcode.Transports.UTP.UnityTransport>();
+        if (transporte == null) transporte = FindAnyObjectByType<Unity.Netcode.Transports.UTP.UnityTransport>();
         if (transporte == null)
         {
             Debug.LogError("[Lobby] ERROR: no hay UnityTransport en la escena");

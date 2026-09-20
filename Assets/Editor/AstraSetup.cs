@@ -310,7 +310,7 @@ public static class AstraSetup
             return;
         }
 
-        NetworkManager nm = Object.FindObjectOfType<NetworkManager>();
+        NetworkManager nm = Object.FindAnyObjectByType<NetworkManager>();
         if (nm == null)
         {
             Debug.LogError("[AstraSetup] No hay NetworkManager en la escena abierta (abri Menu.unity)");
