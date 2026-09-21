@@ -6,7 +6,7 @@ public class Portales : MonoBehaviour
 {
     [Header("Configuración")]
     public string playerTag = "Player";
-    public float teleportCooldown = 0.5f; // evita el bulce del tp
+    public float teleportCooldown = 0.5f; // evita el bucle de teletransporte
     public Vector3 exitOffset = new Vector3(0, 1f, 0); // ajustá el personaje
 
     // Lista compartida para todos los portales
@@ -29,6 +29,16 @@ public class Portales : MonoBehaviour
     {
         if (onCooldown) return;
         if (!other.CompareTag(playerTag)) return;
+
+        // En red, el portal solo lo atraviesa el DUEÑO del cuerpo: si cada maquina
+        // teletransportara por su cuenta, los destinos aleatorios pelearian con la
+        // replica del ClientNetworkTransform.
+        var cuerpoEnRed = other.GetComponentInParent<Unity.Netcode.NetworkObject>();
+        if (cuerpoEnRed != null && !cuerpoEnRed.IsOwner) return;
+
+        // el cadaver no viaja por portales
+        var jugador = other.GetComponentInParent<PlayerAstra>();
+        if (jugador != null && jugador.Muerto) return;
 
         // Teletransporte random en los portales
         List<Portales> otros = allPortals.FindAll(p => p != this);

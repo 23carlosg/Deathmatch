@@ -11,13 +11,11 @@ using UnityEngine.InputSystem;
 /// - Disparar con click izquierdo: raycast desde la camara (a donde apunta el crosshair), danio
 ///   aplicado por el SERVIDOR, flash en la boca del arma, efecto de impacto y retroceso de camara
 /// - Recargar con R (tiempo real), cambiar de arma con 1/2/3 (el modelo viaja por red)
-/// - Animaciones por CODIGO, sin triggers: VelX/VelY alimentan el blend direccional y "Pose" el salto.
-///   El salto se decide EN EL MISMO FRAME que se toca Espacio (antes se publicaba un frame despues:
-///   el remoto veia un frame caminando y recien ahi el salto = el "saltito")
-/// - Red: la posicion la replica el ClientNetworkTransform (autoridad del dueño) y el resto viaja
-///   por NetworkVariables escritas por el dueño. La salud la escribe SOLO el servidor.
-/// - Los INSTANTES de disparo viajan por Rpc: el remoto ve el flash y la animacion en el momento
-///   exacto, no un estado suavizado adestrozado por la interpolacion.
+/// - Animaciones por codigo: VelX/VelY alimentan el blend direccional; el int Arma y el bool
+///   isGrounded eligen los estados de salto, decididos en el mismo frame del impulso.
+/// - Red: posicion via ClientNetworkTransform (autoridad del dueño), estado via NetworkVariables
+///   del dueño; la salud la escribe solo el servidor.
+/// - Los instantes de disparo viajan por Rpc para verse en el remoto sin retardo.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerAstra : NetworkBehaviour
@@ -39,7 +37,7 @@ public class PlayerAstra : NetworkBehaviour
     [Header("Camara (tercera persona)")]
     public float alturaCamara = 1.6f;      // altura de la camara al caminar
     public float atrasCamara = 2.5f;       // metros detras del cuerpo
-    public float ajusteDePies = 0f;        // ajuste manual extra si el modelo queda hundido/flotando
+    public float ajusteDePies = 0f;        // retoque fino de la altura del modelo (desde el prefab)
     public float hombroApuntado = 0.45f;   // desvio lateral al apuntar (camara sobre el hombro derecho)
     public float desvioCamaraLibre = 0.6f; // desvio lateral al caminar SIN apuntar: la camara se corre
                                            // a la derecha y el personaje queda a la IZQUIERDA del centro,
@@ -56,8 +54,11 @@ public class PlayerAstra : NetworkBehaviour
     public float cadencia = 6f;            // disparos por segundo
     public float dispersion = 1.5f;        // grados al disparar desde la cadera (apuntando es preciso)
     public float retroceso = 0.5f;         // empujon vertical de la camara por disparo
-    public float retrocesoRotacionArma = 6f; // cuantos grados sube la punta del arma por disparo
-                                             // (si la punta baja en vez de subir, pone el valor negativo)
+    public float retrocesoRotacionArma = 6f; // grados que sube la punta del arma por disparo (negativo = baja)
+
+    [Header("Sonido")]
+    public AudioClip sonidoDisparo;        // clip del disparo (arrastrar en el Inspector del prefab)
+    [Range(0f, 1f)] public float volumenDisparo = 1f;
 
     [Header("Salud")]
     public float saludMaxima = 100f;
@@ -75,29 +76,25 @@ public class PlayerAstra : NetworkBehaviour
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     readonly NetworkVariable<float> redVelY = new NetworkVariable<float>(0f,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    // 0 = en el piso, 1 = salto con rifle, 2 = salto con pistola, 3 = salto desarmado
-    readonly NetworkVariable<int> redPose = new NetworkVariable<int>(0,
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    // arma en la mano: 1 = rifle, 2 = pistola, 3 = desarmado
+    // arma en la mano: 1 = rifle, 2 = pistola, 3 = desarmado (tambien parametro del animator)
     readonly NetworkVariable<int> redArma = new NetworkVariable<int>(1,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     // salud: la escribe SOLO el servidor cuando le llega el danio; 0 = muerto
     readonly NetworkVariable<float> redSalud = new NetworkVariable<float>(100f,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    // piso ESTABLE (con debounce del parpadeo de isGrounded): viaja por red porque los estados de
-    // salto del animator entran/salen con isGrounded. Sin esto el remoto lo tenia en false fijo
-    // y quedaba ciclando la animacion de salto = los "saltitos" del personaje lejano
+    // estado de piso estable (con debounce) que consumen los estados de salto del animator
     readonly NetworkVariable<bool> redEnElPiso = new NetworkVariable<bool>(true,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     public bool Muerto { get; private set; }
     public float Salud => redSalud.Value;   // para el HUD
 
-    bool esLocal = true;                    // false en las instancias remotas
+    bool esLocal = true;   // false en las instancias remotas
     CharacterController controller;
     Camera camara;
     Transform camaraTransform;
     Crosshair mira;
+    AudioSource audio;
 
     Vector3 velocidadHorizontal;
     float velocidadVertical;
@@ -128,8 +125,9 @@ public class PlayerAstra : NetworkBehaviour
             if (controlCamara == null) controlCamara = camara.GetComponent<PlayerCamera>();
         }
         BuscarArmas();
+        ConfigurarAudio();
         AplicarArma(armaActual);           // arranca mostrando solo el arma del slot inicial
-        GuardarPoseDeReposoDeLasArmas();   // el recoil se aplica alrededor de la pose que ajustaste a mano
+        GuardarPoseDeReposoDeLasArmas();   // el recoil se aplica alrededor de la pose de reposo
         ConfigurarCuerpo();
     }
 
@@ -150,15 +148,13 @@ public class PlayerAstra : NetworkBehaviour
             mira = Crosshair.Crear();      // la mira (crosshair) solo existe en la maquina del dueño
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+            PlayerCamera.DueñoMuerto = false;   // reconectar a una partida arranca vivo
             StartCoroutine(SalvedadPorSiElMapaNoAvisa());
             StartCoroutine(AsegurarMiraTrasCargaDeEscena());
         }
     }
 
-    // La escena del menu se descarga al entrar a la partida y se lleva puesta la mira del HOST
-    // (en el host los jugadores ya existen cuando se cambia de escena; en el cliente se spawnean
-    // despues, por eso el cliente nunca tuvo este problema). Al re-crearla quedaba el canvas
-    // apagado para siempre. Espera a que termine la carga y re-crea la mira si no esta visible.
+    // El cambio de escena puede dejar la mira sin canvas: la re-crea si no esta visible.
     IEnumerator AsegurarMiraTrasCargaDeEscena()
     {
         yield return new WaitForSeconds(1f);
@@ -170,12 +166,11 @@ public class PlayerAstra : NetworkBehaviour
         }
     }
 
-    // Si a los 5 segundos el mapa todavia no avisa que esta listo, se fuerza igual:
-    // mejor que el jugador se mueva un poco antes de tiempo a que quede congelado para siempre.
+    // Red de seguridad: si a los 5 segundos sigue sin haber gate de movimiento, se fuerza.
     IEnumerator SalvedadPorSiElMapaNoAvisa()
     {
         yield return new WaitForSeconds(5f);
-        if (!NetworkLobbyManager.MapaListo)
+        if (!NetworkLobbyManager.PuedeMoverse)
         {
             Debug.LogWarning("[PlayerAstra] El mapa nunca avisó que estaba listo, se fuerza el movimiento igual.");
             NetworkLobbyManager.ForzarMapaListoSiTarda();
@@ -185,14 +180,14 @@ public class PlayerAstra : NetworkBehaviour
     // En una instancia remota se apaga todo lo privativo de la maquina del dueño
     void ApagarLoLocal()
     {
-        foreach (Camera c in GetComponentsInChildren<Camera>())
+        // las camaras remotas se destruyen por completo: no deben renderizar en esta maquina
+        foreach (Camera c in GetComponentsInChildren<Camera>(true))
         {
-            c.enabled = false;
-            AudioListener listener = c.GetComponent<AudioListener>();
-            if (listener != null) listener.enabled = false;
+            c.gameObject.SetActive(false);
+            Destroy(c.gameObject);
         }
-        foreach (PlayerCamera pc in GetComponentsInChildren<PlayerCamera>())
-            pc.enabled = false;
+        foreach (PlayerCamera pc in GetComponentsInChildren<PlayerCamera>(true))
+            pc.enabled = false;   // el remoto no mueve camara ni cursor; el estado de muerte lo comparte PlayerCamera.DueñoMuerto
         if (mira != null) mira.Mostrar(false);
     }
 
@@ -200,8 +195,10 @@ public class PlayerAstra : NetworkBehaviour
     {
         if (!esLocal)
         {
-            // instancia remota: reproducir lo que manda el dueño, suavizado para disimular
-            // los saltos entre paquetes de red (local NO se suaviza: responde al toque de tecla)
+            // seguridad: ninguna camara debe sobrevivir en una instancia remota
+            if (camara != null) ApagarLoLocal();
+
+            // instancia remota: reproduce el estado del dueño, suavizado entre paquetes
             if (animator == null) return;
             float t = 1f - Mathf.Exp(-15f * Time.deltaTime);
             velXSuave = Mathf.Lerp(velXSuave, redVelX.Value, t);
@@ -210,8 +207,7 @@ public class PlayerAstra : NetworkBehaviour
             animator.SetFloat("VelY", velYSuave);
             bool pisoRemoto = redEnElPiso.Value;
             animator.SetBool("isGrounded", pisoRemoto);
-            animator.SetInteger("Pose", redPose.Value);
-            AplicarArma(redArma.Value);
+            AplicarArma(redArma.Value);   // setea el int Arma y muestra el modelo del arma en mano
             AplicarRecoilDelArma();   // el remoto tambien ve el saltito del arma al disparar
             RevisarEstadoDeSalud();
             return;
@@ -219,28 +215,12 @@ public class PlayerAstra : NetworkBehaviour
 
         if (Keyboard.current == null) return; // no hay teclado conectado
 
-        // No mover el CharacterController hasta que el mapa real haya terminado de cargar,
-        // para no caer al vacio antes de que exista el piso (ver NetworkLobbyManager.MapaListo)
-        if (!NetworkLobbyManager.MapaListo) return;
-
-        // TEST de danio: K = quitarse vida (viaja por el servidor), L = revivir.
-        // Cuando existan balas reales estas teclas sobran: el disparo llama a lo mismo.
-        if (Keyboard.current.kKey.wasPressedThisFrame && !Muerto) Morir();
-        if (Keyboard.current.lKey.wasPressedThisFrame) Revivir();
-
-        // TEST de sincronizacion: P suelta una marca visible para TODOS en el mismo instante
-        if (Keyboard.current.pKey.wasPressedThisFrame) MarcarPuntoServerRpc();
+        // no moverse hasta que la escena de juego este lista (evita caer antes de que exista el piso)
+        if (!NetworkLobbyManager.PuedeMoverse) return;
 
         RevisarEstadoDeSalud();   // aplica muerte/resurreccion que vengan del servidor
 
-        if (Muerto)
-        {
-            // el cuerpo muerto solo cae: gravedad sin input; el animator queda en el ultimo frame
-            if (controller.isGrounded && velocidadVertical < 0f) velocidadVertical = -2f;
-            velocidadVertical -= gravedad * Time.deltaTime;
-            controller.Move(Vector3.up * velocidadVertical * Time.deltaTime);
-            return;
-        }
+        if (Muerto) return;   // cuerpo muerto sin control: el CharacterController queda apagado
 
         LeerCambioDeArma();
         LeerApuntar();
@@ -285,13 +265,11 @@ public class PlayerAstra : NetworkBehaviour
         if (armaPistola != null) armaPistola.SetActive(arma == 2);
         if (animator != null)
         {
-            animator.SetInteger("Arma", arma == 3 ? 0 : arma);
-            animator.SetBool("Pistol", arma == 2);   // por si el animator usa el bool en vez del int
+            animator.SetInteger("Arma", arma == 3 ? 0 : arma);   // elige rifle/pistola y sus saltos
         }
     }
 
-    // Encuentra los modelos de armas colgados de la mano por nombre. Si preferis, tambien podes
-    // arrastrarlos a mano en el Inspector: si los campos estan llenos, no se busca nada.
+    // Busca los modelos de armas por nombre (o se arrastran en el Inspector).
     void BuscarArmas()
     {
         Transform raiz = animator != null ? animator.transform : transform;
@@ -318,8 +296,7 @@ public class PlayerAstra : NetworkBehaviour
             Debug.LogWarning("[PlayerAstra] No encontre los modelos de las armas bajo la mano: arrastralos en el Inspector del prefab (Arma Rifle / Arma Pistola).");
     }
 
-    // Guarda la pose que ajustaste a mano de cada arma en la mano: el retroceso se aplica como un
-    // desvio temporario alrededor de esa pose y al terminar vuelve EXACTO a ella.
+    // Guarda la pose de reposo de cada arma: el retroceso se aplica alrededor de ella.
     void GuardarPoseDeReposoDeLasArmas()
     {
         if (armaRifle != null)
@@ -348,8 +325,7 @@ public class PlayerAstra : NetworkBehaviour
         }
     }
 
-    // Retroceso del arma: un empujon corto hacia atras con el cañon subiendo un poco, y vuelve
-    // solo. Corre en el dueño y en las remotas (a la remota le llega via el Rpc de disparo).
+    // Retroceso del arma: inclinacion breve que decae sola (remotas via el Rpc de disparo).
     void AplicarRecoilDelArma()
     {
         if (recoilArma <= 0f) return;
@@ -368,11 +344,15 @@ public class PlayerAstra : NetworkBehaviour
         }
         else return;
 
-        // SOLO rotacion, y PRE-multiplicada: el eje de giro es el del HUESO de la mano (no el del
-        // arma, que esta apuntando para cualquier lado dentro de la mano). Asi el pivote queda en
-        // la mano: la culata no se despega y solo la punta sube.
+        // inclinacion en espacio de mundo alrededor de la derecha del arma:
+        // la punta sube siempre, montada como este montada en la mano
         activa.localPosition = posReposo;
-        activa.localRotation = Quaternion.Euler(-recoilArma * retrocesoRotacionArma, 0f, 0f) * rotReposo;
+        Quaternion reposoMundo = activa.parent != null ? activa.parent.rotation * rotReposo : rotReposo;
+        Vector3 ejeDerechaDelArma = reposoMundo * Vector3.right;
+        Quaternion inclinadaMundo = Quaternion.AngleAxis(-recoilArma * retrocesoRotacionArma, ejeDerechaDelArma) * reposoMundo;
+        activa.localRotation = activa.parent != null
+            ? Quaternion.Inverse(activa.parent.rotation) * inclinadaMundo
+            : inclinadaMundo;
     }
 
     // ------------------------- MOVIMIENTO -------------------------
@@ -409,16 +389,8 @@ public class PlayerAstra : NetworkBehaviour
             bufferSaltoTimer = 0f;
             enSaltoReal = true;   // la pose de salto se mantiene hasta aterrizar de verdad
 
-            // SIN DELAY: la animacion de salto se decide ACA, en el frame del toque. Antes "Pose"
-            // se publicaba en Animar() con un frame de retraso: el remoto veia un frame caminando
-            // y recien el siguiente el salto -> el "saltito" que se veia entre jugadores.
-            int poseAlSaltar = armaActual;
-            if (animator != null)
-            {
-                animator.SetInteger("Pose", poseAlSaltar);
-                animator.SetBool("isGrounded", false);
-            }
-            redPose.Value = poseAlSaltar;
+            // la pose de salto se decide en el mismo frame del impulso
+            if (animator != null) animator.SetBool("isGrounded", false);
         }
 
         // gravedad
@@ -450,18 +422,12 @@ public class PlayerAstra : NetworkBehaviour
         float velX = dir.x;
         float velY = dir.y;
 
-        // La pose de salto SOLO se enciende con un salto REAL (impulso al tocar Espacio, marcado
-        // en Mover) y vuelve a 0 al aterrizar. Nunca por heuristica de isGrounded: ese bool
-        // "parpadea" mientras se camina y cada parpadeo convertia la pose en salto = los
-        // "saltitos" del personaje que veia el otro jugador. Caminar/saltar de una plataforma
-        // ahora cae con la animacion de locomocion, sin pose de salto inventada.
+        // la pose de salto solo se enciende con un salto real (impulso de Mover) y vuelve al aterrizar
         if (controller.isGrounded && velocidadVertical <= 0.01f) enSaltoReal = false;
         if (controller.isGrounded) tiempoEnElAire = 0f; else tiempoEnElAire += Time.deltaTime;
 
-        // piso ESTABLE: los parpadeos de isGrounded no cuentan (gracia de 0.1s); el salto real
-        // saca los pies del piso en el mismo frame del impulso (enSaltoReal)
+        // piso estable: gracia de 0.1s para los parpadeos de isGrounded
         bool enElPiso = !enSaltoReal && tiempoEnElAire < 0.1f;
-        int pose = enSaltoReal ? armaActual : 0;
 
         // suavizado local minimo (0.08s): elimina el pop entre walk/run sin sentirse con delay
         float t = 1f - Mathf.Exp(-14f * Time.deltaTime);
@@ -472,14 +438,12 @@ public class PlayerAstra : NetworkBehaviour
         {
             animator.SetFloat("VelX", velXSuave);
             animator.SetFloat("VelY", velYSuave);
-            animator.SetInteger("Pose", pose);
             animator.SetBool("isGrounded", enElPiso);
         }
 
         // publicar por red para las instancias remotas
         redVelX.Value = velX;
         redVelY.Value = velY;
-        redPose.Value = pose;
         redEnElPiso.Value = enElPiso;
     }
 
@@ -545,8 +509,7 @@ public class PlayerAstra : NetworkBehaviour
             direccion = Quaternion.AngleAxis(angulo, camaraTransform.up) * direccion;
         }
 
-        // el rayo nace detras del cuerpo (camara en 3ra persona): el primer impacto que NO sea
-        // parte del propio jugador es el valido, para nunca autodispararnos
+        // el rayo nace detras del cuerpo: se descarta cualquier impacto del propio jugador
         RaycastHit elegido = default;
         bool acerto = false;
         RaycastHit[] impactos = Physics.RaycastAll(origen, direccion, alcance, ~0, QueryTriggerInteraction.Ignore);
@@ -577,15 +540,15 @@ public class PlayerAstra : NetworkBehaviour
         if (efectoDisparo != null)
             Instantiate(efectoDisparo, posicionDeLaBoca, bocaDelArma != null ? bocaDelArma.rotation : Quaternion.identity);
 
-        // el INSTANTE de disparo viaja por red: el remoto reproduce el flash y la animacion
-        // en el momento exacto (los Rpc no se suavizan, llegan como eventos)
+        ReproducirDisparo();
+
+        // el instante de disparo viaja por red para reproducirse en el remoto sin retardo
         DisparoEfectuadoClientRpc(posicionDeLaBoca);
 
-        if (animator != null) animator.SetTrigger("Attack");
-
-        // retroceso: la camara empuja hacia arriba y el arma salta hacia atras y vuelve
+        // retroceso: el arma se inclina y vuelve; la vista se empuja hacia arriba
+        // (rotacionVertical positivo inclina hacia abajo, por eso se resta)
         recoilArma = 1f;
-        if (controlCamara != null) controlCamara.rotacionVertical += apuntando ? retroceso * 0.7f : retroceso;
+        if (controlCamara != null) controlCamara.rotacionVertical -= apuntando ? retroceso * 0.7f : retroceso;
     }
 
     // true si el transform pertenece al cuerpo/arma de ESTE jugador (para no autoimpactarse)
@@ -604,9 +567,7 @@ public class PlayerAstra : NetworkBehaviour
         return PuntoDelCuerpoEnMundo(new Vector3(0.25f, 1.35f, 0.7f));
     }
 
-    // Posicion de mundo de un punto expresado en espacio LOCAL del cuerpo, usando un hijo
-    // temporal de escala 1. (Unity no deja crear un hijo con escala 0: la pistola colgada del
-    // hueso usa una escala heredada de ~0.07 y sus transforms no sirven como puntos de efecto.)
+    // Posicion de mundo de un punto local del cuerpo, via un hijo temporal de escala 1 (los huesos heredan escala).
     Vector3 PuntoDelCuerpoEnMundo(Vector3 puntoLocal)
     {
         GameObject auxiliar = new GameObject("Aux");
@@ -653,11 +614,9 @@ public class PlayerAstra : NetworkBehaviour
     {
         if (Muerto) return;
         redSalud.Value = Mathf.Max(0f, redSalud.Value - cantidad);
-        Debug.Log($"[PlayerAstra] Servidor: {cantidad} de danio al jugador {OwnerClientId} (salud: {redSalud.Value})");
     }
 
-    // El INSTANTE de disparo viaja por red: el remoto ve el flash y la animacion de disparo
-    // en el momento exacto, sin depender de la interpolacion de la animacion locomotora
+    // Reproduce en las instancias remotas el instante de disparo del dueño.
     [ClientRpc]
     void DisparoEfectuadoClientRpc(Vector3 posicionDeLaBoca)
     {
@@ -665,7 +624,26 @@ public class PlayerAstra : NetworkBehaviour
         recoilArma = 1f;       // el remoto ve el saltito del arma en el mismo instante
         if (efectoDisparo != null)
             Instantiate(efectoDisparo, posicionDeLaBoca, Quaternion.identity);
-        if (animator != null) animator.SetTrigger("Attack");
+        ReproducirDisparo();
+    }
+
+    // Sonido de disparo en audio 3D: cada maquina lo reproduce una sola vez (el dueño en
+    // Disparar, las remotas via el Rpc) y se escucha desde la posicion del cuerpo que dispara,
+    // con volumen segun distancia. Pitch con leve variacion para no sonar identico cada tiro.
+    void ConfigurarAudio()
+    {
+        audio = gameObject.AddComponent<AudioSource>();
+        audio.playOnAwake = false;
+        audio.spatialBlend = 1f;   // totalmente 3D
+        audio.minDistance = 4f;
+        audio.maxDistance = 60f;
+    }
+
+    void ReproducirDisparo()
+    {
+        if (sonidoDisparo == null || audio == null) return;
+        audio.pitch = Random.Range(0.94f, 1.06f);
+        audio.PlayOneShot(sonidoDisparo, volumenDisparo);
     }
 
     // Punto de entrada clasico (misma firma que el Player viejo) para sistemas externos de daño
@@ -690,17 +668,18 @@ public class PlayerAstra : NetworkBehaviour
         if (estaMuerto == Muerto) return;
 
         Muerto = estaMuerto;
+
+        // el cuerpo muerto queda sin collider (se puede caminar a traves de el) y el revivido
+        // lo recupera; corre en TODAS las maquinas porque RevisarEstadoDeSalud corre en todas
+        if (controller != null) controller.enabled = !Muerto;
+
         if (animator != null)
-        {
-            // "Dead" es el nombre REAL del bool del animator AstraAnimatorFull (verificado en el
-            // .controller). "Death" queda por si alguna transicion usa el trigger, como el soldado viejo.
-            animator.SetBool("Dead", Muerto);
-            if (Muerto) animator.SetTrigger("Death");
-        }
+            animator.SetBool("Dead", Muerto);   // el AnyState del animator entra/sale de la muerte
 
         if (esLocal)
         {
             apuntando = false;
+            PlayerCamera.DueñoMuerto = Muerto;   // la camara deja de girar el cuerpo: el cadaver queda quieto
             if (mira != null) mira.Mostrar(!Muerto);
             if (Muerto)
             {
@@ -715,14 +694,14 @@ public class PlayerAstra : NetworkBehaviour
         }
     }
 
-    // TEST (tecla K): muerte via el camino real de red (cliente pide danio -> servidor aplica)
+    // Muerte pidiendo el danio por el camino de red (lo aplica el servidor)
     public void Morir()
     {
         if (Muerto) return;
         RecibirDanioServerRpc(9999f);
     }
 
-    // TEST (tecla L): el servidor restaura la salud y reposiciona a todos lados igual
+    // Revive por red: el servidor restaura la salud y reposiciona
     public void Revivir()
     {
         if (!Muerto) return;
@@ -740,47 +719,24 @@ public class PlayerAstra : NetworkBehaviour
     [ClientRpc]
     void RevivirClientRpc(Vector3 posicion)
     {
-        if (!esLocal) transform.position = posicion;
-        else transform.position = posicion;   // el dueño tambien se mueve (su NetworkTransform es autoridad del dueño)
+        transform.position = posicion;   // la replica la hace el ClientNetworkTransform del dueño
         velocidadHorizontal = Vector3.zero;
         velocidadVertical = 0f;
         // RevisarEstadoDeSalud (en el Update) hace el resto: Muerto=false, cursor, mira, animacion
     }
 
-    // ------------------------- PING DE PRUEBA DE SYNC -------------------------
-
-    // Tecla P: marca amarilla visible para TODOS los jugadores en el mismo punto y mismo
-    // instante. Si todos ven la marca en el mismo lugar a la vez, la sincronizacion anda.
-    [ServerRpc]
-    void MarcarPuntoServerRpc()
-    {
-        MarcarPuntoClientRpc();
-    }
-
-    [ClientRpc]
-    void MarcarPuntoClientRpc()
-    {
-        if (esLocal) return;   // el que la lanzo ya la ve en su maquina
-        GameObject marca = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        marca.transform.position = PuntoDeDisparo();
-        marca.transform.localScale = Vector3.one * 0.25f;
-        Destroy(marca.GetComponent<Collider>());
-        Renderer r = marca.GetComponent<Renderer>();
-        if (r != null && Shader.Find("Sprites/Default") != null)
-            r.sharedMaterial = new Material(Shader.Find("Sprites/Default")) { color = new Color(1f, 0.9f, 0.1f) };
-        Destroy(marca, 1.5f);
-    }
-
     // ------------------------- CUERPO / MODELO -------------------------
 
-    // Mide el modelo una vez al arrancar: apoya los pies del mesh en el origen del cuerpo,
-    // ajusta la capsula del CharacterController a la altura real y ubica la camara detras.
+    // Alinea el modelo con el piso y ajusta la capsula a la altura medida (una sola vez por
+    // instancia). La suela se apoya en -skinWidth para que las botas rendericen sobre el piso;
+    // ajusteDePies permite un retoque fino desde el Inspector.
+    bool cuerpoAlineado;
+
     void ConfigurarCuerpo()
     {
-        Transform modelo = animator != null ? animator.transform : null;
-
+        // tope y suela del modelo medidos por bounds (sin armas ni particulas)
         float tope = 0f;
-        float pies = 0f;
+        float suela = float.MaxValue;
         bool medido = false;
         foreach (Renderer r in GetComponentsInChildren<Renderer>())
         {
@@ -789,14 +745,16 @@ public class PlayerAstra : NetworkBehaviour
             float yMax = r.bounds.max.y - transform.position.y;
             float yMin = r.bounds.min.y - transform.position.y;
             if (yMax > tope) tope = yMax;
-            pies = medido ? Mathf.Min(pies, yMin) : yMin;
+            if (yMin < suela) suela = yMin;
             medido = true;
         }
 
-        if (medido && modelo != null)
+        Transform modelo = animator != null ? animator.transform : null;
+        if (medido && modelo != null && !cuerpoAlineado)
         {
-            // subir el modelo hasta que los pies queden en el origen (si cuelgan por debajo)
-            float subida = -pies + ajusteDePies;
+            cuerpoAlineado = true;
+            float objetivoSuela = -controller.skinWidth;   // altura a la que las botas quedan sobre el piso
+            float subida = objetivoSuela - suela + ajusteDePies;
             float escala = transform.lossyScale.y != 0f ? transform.lossyScale.y : 1f;
             modelo.localPosition += Vector3.up * (subida / escala);
             tope += subida;

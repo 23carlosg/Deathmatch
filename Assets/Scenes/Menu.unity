@@ -355,7 +355,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1407899128}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &1407899130
 Camera:
   m_ObjectHideFlags: 0
@@ -502,10 +502,12 @@ MonoBehaviour:
   - {x: -134.0847, y: 1, z: 146.4802}
   - {x: -134.0847, y: 1, z: 174.4802}
   - {x: -58.08469, y: 1, z: 106.4802}
-  - {x: -58.08469, y: 1, z: -134.0847}
+  - {x: -58.08469, y: 1, z: 110.4802}
   - {x: -58.08469, y: 1, z: 174.4802}
   - {x: -94.08469, y: 1, z: 102.4802}
   - {x: -94.08469, y: 1, z: 178.4802}
+  minPiso: {x: -136, y: -1, z: 100}
+  maxPiso: {x: -56, y: 5, z: 180}
 --- !u!4 &1781342303
 Transform:
   m_ObjectHideFlags: 0
