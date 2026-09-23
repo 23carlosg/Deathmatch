@@ -1,0 +1,19 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UIToolkit/ButtonStyle.uss?fileID=7433441132597879392&amp;guid=1f1157271424e0f42aeab47b812abc4c&amp;type=3#ButtonStyle"/>
+    <ui:VisualElement name="MainMenuPanel" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Images/FondoMenu.jpg?fileID=2800000&amp;guid=a96f078777795d54fa3005e32d2bad8f&amp;type=3#FondoMenu&quot;); display: none;">
+        <ui:Label text="MENU" name="Menu" style="font-size: 125px; -unity-text-align: upper-center; color: rgb(255, 255, 255); -unity-font-style: bold; -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 5px 5px 5px rgb(0, 0, 0); top: 0; margin-top: 100px;"/>
+        <ui:Button text="PLAY" name="PlayButton" class="ButtonStyle" style="top: 150px;"/>
+        <ui:Button text="OPCIONES" name="SettingsButton" class="ButtonStyle" style="top: 180px;"/>
+        <ui:Button text="SALIR" name="QuitButton" class="ButtonStyle" style="top: 210px;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="SettingPanel" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Images/FondoMenu.jpg?fileID=2800000&amp;guid=a96f078777795d54fa3005e32d2bad8f&amp;type=3#FondoMenu&quot;); justify-content: flex-start; align-self: auto; align-content: flex-start; display: none;">
+        <ui:Label text="OPCIONES" name="Titulo" style="font-size: 125px; -unity-text-align: upper-center; color: rgb(255, 255, 255); -unity-font-style: bold; -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 5px 5px 5px rgb(0, 0, 0); top: 0; margin-top: 100px;"/>
+        <ui:Label text="VOLUMEN" name="VolumenLabel" style="font-size: 70px; text-shadow: 0 0 0 rgb(0, 0, 0); -unity-text-outline-color: rgb(0, 0, 0); color: rgb(255, 255, 255); -unity-text-align: upper-center; top: 150px;"/>
+        <ui:Slider label="" value="50" high-value="100" name="VolumenSlider" fill="true" show-input-field="false" inverted="false" enabled="true" view-data-key="" focusable="true" style="-unity-text-align: upper-center; top: 230px; width: 801px; left: auto; display: flex; position: relative; height: 41px; border-left-width: 0; align-content: flex-start; transform-origin: center; transition-duration: 0s; align-self: center;"/>
+        <ui:Button text="ATRAS" name="BackButton" class="ButtonStyle" style="top: 515px; bottom: auto;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="MainLobbyPanel" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Images/FondoMenu.jpg?fileID=2800000&amp;guid=a96f078777795d54fa3005e32d2bad8f&amp;type=3#FondoMenu&quot;); display: flex;">
+        <ui:Button text="INICIAR HOST" name="IniciarHostButton" class="ButtonStyle" style="top: 400px; left: auto;"/>
+        <ui:Button text="INICIAR CLIENTE" name="IniciarClienteButton" class="ButtonStyle" style="top: 500px; left: auto;"/>
+    </ui:VisualElement>
+</ui:UXML>

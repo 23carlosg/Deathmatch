@@ -7,7 +7,8 @@ using UnityEngine.InputSystem;
 /// - La camara es HIJA del cuerpo: sigue su posicion siempre, sin codigo extra
 /// - El pitch (arriba/abajo) queda solo en la camara
 /// - Esc libera / captura el mouse
-/// Todo se aplica en LateUpdate (despues de que Player movio el cuerpo).
+/// Todo se aplica en LateUpdate (despues de que PlayerAstra movio el cuerpo).
+/// Si el jugador esta muerto no gira nada y no captura el cursor.
 /// </summary>
 public class PlayerCamera : MonoBehaviour
 {
@@ -15,6 +16,9 @@ public class PlayerCamera : MonoBehaviour
     public float sensibilidad = 2f;
     public float limiteVertical = 80f;
     public float rotacionVertical;       // inclinacion actual (pitch)
+
+    // Estado de muerte del dueño, escrito por PlayerAstra y consultado por la camara
+    public static bool DueñoMuerto { get; set; }
 
     void Awake()
     {
@@ -27,6 +31,9 @@ public class PlayerCamera : MonoBehaviour
 
     void LateUpdate()
     {
+        // si el dueño esta muerto, el cuerpo queda quieto
+        if (DueñoMuerto) return;
+
         // Esc para liberar o capturar el mouse
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {

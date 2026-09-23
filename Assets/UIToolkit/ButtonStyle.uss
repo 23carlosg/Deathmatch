@@ -1,0 +1,22 @@
+:root {
+}
+
+.ButtonStyle {
+    height: 112px;
+    width: 570px;
+    align-self: center;
+    top: 125px;
+    font-size: 60px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    background-color: rgb(27, 27, 27);
+    border-top-left-radius: 25px;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+    border-top-right-radius: 25px;
+    transition-duration: 0.2s;
+}
+
+.ButtonStyle:hover {
+    scale: 1.1 1.1;
+}
