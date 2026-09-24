@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: 1.SciFiRifle
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   id: 0
-  nombre: 
+  nombre: SciFiRifle
   icono: {fileID: 21300000, guid: 9e48944b190d14b449c2e298101f16a1, type: 3}
   maxstock: 1
