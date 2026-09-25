@@ -4,45 +4,39 @@ using System.Collections.Generic;
 [CreateAssetMenu(fileName = "Nuevo DB", menuName = "Inventario/Base de Datos")]
 public class ItemDataBase : ScriptableObject
 {
-    // Lista de items en la base de datos
     public List<ItemData> items = new List<ItemData>();
-    // Diccionario para acceder a los items por nombre (Oculto)
-    private Dictionary<string, ItemData> itemDictionary = new Dictionary<string, ItemData>();
-    
+
+    private static ItemDataBase _instance;
+    public static ItemDataBase Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                // Busca el asset dentro de una carpeta llamada "Resources"
+                _instance = Resources.Load<ItemDataBase>("ItemDataBase");
+
+                if (_instance == null)
+                    Debug.LogError("No se encontró ItemDataBase en una carpeta Resources.");
+            }
+            return _instance;
+        }
+    }
+
+    // Llamado desde GameManager al iniciar el juego
     public void InitializeDatabase()
     {
-        itemDictionary.Clear();
-        foreach (ItemData item in items)
-        {
-            if(string.IsNullOrEmpty(item.id.ToString()))
-            {
-                continue;
-            }
-
-            if(!itemDictionary.ContainsKey(item.id.ToString()))
-            {
-            itemDictionary.Add(item.id.ToString(), item);
-            }
-            
-        }
-        Debug.Log("Base de datos inicializada con " + itemDictionary.Count + " items.");
+        Debug.Log("Base de datos de items inicializada con " + items.Count + " items");
     }
-    
-    public ItemData BuscarItem(string id)
-    {
-       //Sistema de seguridad: si el diccionario esta vacio, lo arranca
-       if (itemDictionary.Count == 0 && items.Count > 0)
-       {
-           InitializeDatabase();
-       }
 
-       if(itemDictionary.TryGetValue(id.ToString(), out ItemData itemData))
-       {
-           return itemData;
-       }
-       else
-       {
-           return null;
-       }
+    public int GetId(ItemData itemData)
+    {
+        return items.IndexOf(itemData);
+    }
+
+    public ItemData GetItemById(int id)
+    {
+        if (id < 0 || id >= items.Count) return null;
+        return items[id];
     }
 }

@@ -1,30 +1,53 @@
+using Unity.Netcode;
 using UnityEngine;
 
 public class AgarrarItem : Interaccion
 {   
-    public ItemData itemData; // Referencia al ScriptableObject del item que se va a agarrar
-    public int cantidad = 1; // Cantidad de items que se van a agarrar
+    public ItemData itemData;
 
     public override void Interactuar()
     {
         base.Interactuar();
 
-        // Busca la Hotbar del jugador y le agrega el item
-        Hotbar hotbar = FindAnyObjectByType<Hotbar>();
+        if (!NetworkObject.IsSpawned)
+        {
+            Debug.Log("Este item ya fue agarrado, no está spawneado");
+            return;
+        }
 
+        RequestPickupRpc();
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void RequestPickupRpc(RpcParams rpcParams = default)
+    {
+        ulong clienteId = rpcParams.Receive.SenderClientId;
+        int itemId = ItemDataBase.Instance.GetId(itemData);
+
+        AddItemToPickerRpc(itemId, RpcTarget.Single(clienteId, RpcTargetUse.Temp));
+
+        NetworkObject.Despawn(false);
+    }
+
+    [Rpc(SendTo.SpecifiedInParams)]
+    void AddItemToPickerRpc(int itemId, RpcParams rpcParams = default)
+    {
+        ItemData data = ItemDataBase.Instance.GetItemById(itemId);
+        if (data == null) return;
+
+        NetworkObject localPlayerObject = NetworkManager.Singleton.LocalClient.PlayerObject;
+        if (localPlayerObject == null) return;
+
+        Hotbar hotbar = localPlayerObject.GetComponent<Hotbar>();
         if (hotbar != null)
         {
-            int resultado = hotbar.AddItem(itemData);
-
-            if (resultado == 0)
-            {
-                // Se agregó correctamente, así que el item desaparece del mundo
-                Destroy(gameObject);
-            }
-            else
-            {
-                Debug.Log("No hay espacio en la hotbar");
-            }
+            hotbar.AddItem(data);
         }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        gameObject.SetActive(false);
     }
 }

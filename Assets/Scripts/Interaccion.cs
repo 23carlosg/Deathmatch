@@ -1,6 +1,6 @@
-using UnityEngine;
+using Unity.Netcode;
 
-public class Interaccion : MonoBehaviour
+public class Interaccion : NetworkBehaviour
 {
     public virtual void Interactuar()
     {

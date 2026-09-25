@@ -12079,8 +12079,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 997ba751c4d4d1d4a97716b4ab11bd4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AgarrarItem
+  ShowTopMostFoldoutHeaderGroup: 1
   itemData: {fileID: 11400000, guid: 03695f5b9ec16a94390ec8e044f73d37, type: 2}
-  cantidad: 1
+--- !u!114 &551528114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 551528107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 1360210661
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1001 &551654858
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28564,7 +28591,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de4e1554e86196c42928f2bb177584b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  itemDatabase: {fileID: 11400000, guid: a9e8513f99a87b44b93dd1d9062f0e10, type: 2}
+  itemDatabase: {fileID: 11400000, guid: 21b0784578a81f14b81e8aa2dec7591c, type: 2}
 --- !u!4 &1377246102
 Transform:
   m_ObjectHideFlags: 0
@@ -42774,6 +42801,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100000, guid: 3b75f92e50d992c419ddce3ad37c997a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 551528112}
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: 3b75f92e50d992c419ddce3ad37c997a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 551528114}
     - targetCorrespondingSourceObject: {fileID: 100000, guid: 3b75f92e50d992c419ddce3ad37c997a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 551528113}
