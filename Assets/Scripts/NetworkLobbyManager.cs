@@ -33,7 +33,7 @@ public class NetworkLobbyManager : MonoBehaviour
     Vector3[] ordenSpawnBarajado;
 
     // true cuando la escena de juego termino de cargar en esta maquina; mientras,
-    // PlayerAstra no se mueve para no caer antes de que exista el piso
+    // Player no se mueve para no caer antes de que exista el piso
     public static bool MapaListo { get; private set; } = false;
     public static void ForzarMapaListoSiTarda() { MapaListo = true; }
 
