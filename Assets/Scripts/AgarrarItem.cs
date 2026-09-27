@@ -15,17 +15,21 @@ public class AgarrarItem : Interaccion
             return;
         }
 
+        // El cliente le pide permiso al servidor para agarrar el item
         RequestPickupRpc();
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     void RequestPickupRpc(RpcParams rpcParams = default)
     {
+        // Esto corre solo en el servidor
         ulong clienteId = rpcParams.Receive.SenderClientId;
         int itemId = ItemDataBase.Instance.GetId(itemData);
 
+        // Le devuelve el aviso solo al cliente que lo pidió
         AddItemToPickerRpc(itemId, RpcTarget.Single(clienteId, RpcTargetUse.Temp));
 
+        // Despawnea el objeto: desaparece para todos los jugadores
         NetworkObject.Despawn(false);
     }
 
@@ -43,11 +47,32 @@ public class AgarrarItem : Interaccion
         {
             hotbar.AddItem(data);
         }
-    }
+
+        PlayerAstra jugador = localPlayerObject.GetComponent<PlayerAstra>();
+        if (jugador != null)
+        {
+            if (data.tipoArma == ItemData.TipoArma.Rifle)
+            {
+                jugador.tieneRifle = true;
+                jugador.CambiarArma(1);
+            }
+            else if (data.tipoArma == ItemData.TipoArma.Pistola)
+            {
+                jugador.tienePistola = true;
+                jugador.CambiarArma(2);
+            }
+        }
+}
 
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
+
+        // Al despawnearse, se desactiva visualmente y deja de poder detectarse
         gameObject.SetActive(false);
     }
 }
+
+
+
+

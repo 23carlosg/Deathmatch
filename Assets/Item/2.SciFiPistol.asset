@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c5491fb41fc4f5d4abc791a5d769ce5e, type: 3}
-  m_Name: 1.SciFiRifle
+  m_Name: 2.SciFiPistol
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   id: 0
-  nombre: SciFiRifle
-  icono: {fileID: 21300000, guid: ebb56deb4ca87c7428bc0da4d0b9ab34, type: 3}
+  nombre: SciFiPistol
+  icono: {fileID: 21300000, guid: 325f1c1215952ef46b371a8abd9344fa, type: 3}
   maxstock: 1
-  tipoArma: 1
+  tipoArma: 2

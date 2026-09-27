@@ -9,4 +9,6 @@ public class ItemData : ScriptableObject
     public Sprite icono;
     public int maxstock = 1;
 
+    public enum TipoArma { Ninguna, Rifle, Pistola }
+    public TipoArma tipoArma = TipoArma.Ninguna;
 }

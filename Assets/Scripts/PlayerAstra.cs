@@ -45,16 +45,24 @@ public class PlayerAstra : NetworkBehaviour
     public float fovApuntado = 30f;        // zoom al apuntar (FOV normal = 60; MENOR = MAS zoom)
     public float suavizadoCamara = 10f;    // rapidez con que la camara se acomoda
 
-    [Header("Disparo")]
-    public Transform bocaDelArma;          // punto en la punta del cañon (para el flash; opcional)
-    public GameObject efectoDisparo;       // prefab de flash al disparar (opcional)
-    public GameObject efectoImpacto;       // prefab de impacto en la superficie (opcional)
-    public float danio = 20f;
+    [Header("Disparo - Rifle")]
+    public float danioRifle = 20f;
+    public float retrocesoRifle = 0.5f;
+    public float retrocesoRotacionRifle = 6f;
+    public float cadenciaRifle = 6f;
+
+    [Header("Disparo - Pistola")]
+    public float danioPistola = 25f;
+    public float retrocesoPistola = 0f;
+    public float retrocesoRotacionPistola = 6f;
+    public float cadenciaPistola = 4f; 
+
+    [Header("Disparo - General")]
+    public Transform bocaDelArma;
+    public GameObject efectoDisparo;
+    public GameObject efectoImpacto;
     public float alcance = 200f;
-    public float cadencia = 6f;            // disparos por segundo
-    public float dispersion = 1.5f;        // grados al disparar desde la cadera (apuntando es preciso)
-    public float retroceso = 0.5f;         // empujon vertical de la camara por disparo
-    public float retrocesoRotacionArma = 6f; // grados que sube la punta del arma por disparo (negativo = baja)
+    public float dispersion = 1.5f;
 
     [Header("Sonido")]
     public AudioClip sonidoDisparo;        // clip del disparo (arrastrar en el Inspector del prefab)
@@ -69,7 +77,10 @@ public class PlayerAstra : NetworkBehaviour
 
     [Header("Armas (modelos en la mano; se buscan solos si quedan vacios)")]
     public GameObject armaRifle;           // modelo del rifle montado en la mano derecha
-    public GameObject armaPistola;         // modelo de la pistola montado en la mano derecha
+    public GameObject armaPistola; 
+    // Qué armas tiene el jugador disponibles (se activan al agarrarlas con AgarrarItem)
+    public bool tieneRifle = false;
+    public bool tienePistola = false;        // modelo de la pistola montado en la mano derecha
 
     // --- red: el dueño escribe, los demas leen ---
     readonly NetworkVariable<float> redVelX = new NetworkVariable<float>(0f,
@@ -111,7 +122,7 @@ public class PlayerAstra : NetworkBehaviour
     float recoilArma;        // 0..1: cuan corrida esta el arma por el retroceso (decae solo)
     Vector3 posReposoRifle, posReposoPistola;
     Quaternion rotReposoRifle, rotReposoPistola;
-    int armaActual = 1;      // 1 rifle, 2 pistola, 3 desarmado
+    int armaActual = 3;      // 1 rifle, 2 pistola, 3 desarmado
     int armaAplicada = -1;
 
     void Awake()
@@ -238,13 +249,17 @@ public class PlayerAstra : NetworkBehaviour
 
     void LeerCambioDeArma()
     {
-        if (Keyboard.current.digit1Key.wasPressedThisFrame) CambiarArma(1);
-        if (Keyboard.current.digit2Key.wasPressedThisFrame) CambiarArma(2);
+        // Tecla 1 = slot 1 de la hotbar = pistola (arma 2 en PlayerAstra)
+        if (Keyboard.current.digit1Key.wasPressedThisFrame && tienePistola) CambiarArma(2);
+
+        // Tecla 2 = slot 2 de la hotbar = rifle (arma 1 en PlayerAstra)
+        if (Keyboard.current.digit2Key.wasPressedThisFrame && tieneRifle) CambiarArma(1);
+
         if (Keyboard.current.digit3Key.wasPressedThisFrame) CambiarArma(3);
     }
 
     // Cambia el arma en la mano (1 rifle, 2 pistola, 3 desarmado) y lo publica por red
-    void CambiarArma(int nueva)
+    public void CambiarArma(int nueva)
     {
         if (Muerto || armaActual == nueva) return;
         armaActual = nueva;
@@ -344,12 +359,14 @@ public class PlayerAstra : NetworkBehaviour
         }
         else return;
 
-        // inclinacion en espacio de mundo alrededor de la derecha del arma:
-        // la punta sube siempre, montada como este montada en la mano
         activa.localPosition = posReposo;
         Quaternion reposoMundo = activa.parent != null ? activa.parent.rotation * rotReposo : rotReposo;
         Vector3 ejeDerechaDelArma = reposoMundo * Vector3.right;
-        Quaternion inclinadaMundo = Quaternion.AngleAxis(-recoilArma * retrocesoRotacionArma, ejeDerechaDelArma) * reposoMundo;
+        float rotacionRecoilActual = armaActual == 2 ? retrocesoRotacionPistola : retrocesoRotacionRifle;
+
+        Debug.Log($"recoilArma={recoilArma}, armaActual={armaActual}, rotacionRecoilActual={rotacionRecoilActual}, activa={activa.name}"); // TEMPORAL
+
+        Quaternion inclinadaMundo = Quaternion.AngleAxis(-recoilArma * rotacionRecoilActual, ejeDerechaDelArma) * reposoMundo;
         activa.localRotation = activa.parent != null
             ? Quaternion.Inverse(activa.parent.rotation) * inclinadaMundo
             : inclinadaMundo;
@@ -475,6 +492,7 @@ public class PlayerAstra : NetworkBehaviour
 
     void LeerApuntar()
     {
+        if (armaActual == 3) { apuntando = false; return; } // Desarmado: no puede apuntar
         apuntando = Mouse.current != null && Mouse.current.rightButton.isPressed && !recargando;
     }
 
@@ -489,67 +507,78 @@ public class PlayerAstra : NetworkBehaviour
 
     // ------------------------- DISPARO -------------------------
 
-    void Disparar()
+void Disparar()
+{
+    if (armaActual == 3) return;
+    if (Mouse.current == null) return;
+
+    // La pistola dispara solo con click (una vez por apretada); el rifle es automático mientras se mantiene
+    bool gatilloApretado = armaActual == 2
+        ? Mouse.current.leftButton.wasPressedThisFrame
+        : Mouse.current.leftButton.isPressed;
+
+    if (!gatilloApretado) return;
+    if (Time.time < proximoDisparoPermitido || recargando) return;
+
+    float danioActual = armaActual == 2 ? danioPistola : danioRifle;
+    float retrocesoActual = armaActual == 2 ? retrocesoPistola : retrocesoRifle;
+    float cadenciaActual = armaActual == 2 ? cadenciaPistola : cadenciaRifle;
+   
+    proximoDisparoPermitido = Time.time + 1f / cadenciaActual;
+
+    // el raycast sale desde la camara: dispara a donde apunta la pantalla (el crosshair)
+    Vector3 origen = camaraTransform != null
+        ? camaraTransform.position + camaraTransform.forward * 0.2f
+        : PuntoDeDisparo();
+    Vector3 direccion = camaraTransform != null ? camaraTransform.forward : transform.forward;
+
+    // dispersion al disparar desde la cadera; apuntando el disparo es preciso
+    if (!apuntando && camaraTransform != null)
     {
-        if (Mouse.current == null || !Mouse.current.leftButton.isPressed) return;
-        if (Time.time < proximoDisparoPermitido || recargando) return;
-
-        proximoDisparoPermitido = Time.time + 1f / cadencia;
-
-        // el raycast sale desde la camara: dispara a donde apunta la pantalla (el crosshair)
-        Vector3 origen = camaraTransform != null
-            ? camaraTransform.position + camaraTransform.forward * 0.2f
-            : PuntoDeDisparo();
-        Vector3 direccion = camaraTransform != null ? camaraTransform.forward : transform.forward;
-
-        // dispersion al disparar desde la cadera; apuntando el disparo es preciso
-        if (!apuntando && camaraTransform != null)
-        {
-            float angulo = Random.Range(-dispersion, dispersion);
-            direccion = Quaternion.AngleAxis(angulo, camaraTransform.up) * direccion;
-        }
-
-        // el rayo nace detras del cuerpo: se descarta cualquier impacto del propio jugador
-        RaycastHit elegido = default;
-        bool acerto = false;
-        RaycastHit[] impactos = Physics.RaycastAll(origen, direccion, alcance, ~0, QueryTriggerInteraction.Ignore);
-        System.Array.Sort(impactos, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (RaycastHit h in impactos)
-        {
-            if (DelPropioCuerpo(h.collider.transform)) continue;
-            elegido = h;
-            acerto = true;
-            break;
-        }
-
-        if (acerto)
-        {
-            NetworkObject objetivo = elegido.collider.transform.root.GetComponent<NetworkObject>();
-            if (objetivo != null && objetivo.IsPlayerObject)
-            {
-                // el DANIO lo aplica el SERVIDOR (un cliente nunca escribe la salud de otro)
-                DanioAJugadorServerRpc(danio, objetivo.OwnerClientId);
-            }
-
-            if (efectoImpacto != null)
-                Instantiate(efectoImpacto, elegido.point, Quaternion.LookRotation(elegido.normal));
-        }
-
-        // efecto local inmediato en la boca del arma
-        Vector3 posicionDeLaBoca = PuntoDeDisparo();
-        if (efectoDisparo != null)
-            Instantiate(efectoDisparo, posicionDeLaBoca, bocaDelArma != null ? bocaDelArma.rotation : Quaternion.identity);
-
-        ReproducirDisparo();
-
-        // el instante de disparo viaja por red para reproducirse en el remoto sin retardo
-        DisparoEfectuadoClientRpc(posicionDeLaBoca);
-
-        // retroceso: el arma se inclina y vuelve; la vista se empuja hacia arriba
-        // (rotacionVertical positivo inclina hacia abajo, por eso se resta)
-        recoilArma = 1f;
-        if (controlCamara != null) controlCamara.rotacionVertical -= apuntando ? retroceso * 0.7f : retroceso;
+        float angulo = Random.Range(-dispersion, dispersion);
+        direccion = Quaternion.AngleAxis(angulo, camaraTransform.up) * direccion;
     }
+
+    // el rayo nace detras del cuerpo: se descarta cualquier impacto del propio jugador
+    RaycastHit elegido = default;
+    bool acerto = false;
+    RaycastHit[] impactos = Physics.RaycastAll(origen, direccion, alcance, ~0, QueryTriggerInteraction.Ignore);
+    System.Array.Sort(impactos, (a, b) => a.distance.CompareTo(b.distance));
+    foreach (RaycastHit h in impactos)
+    {
+        if (DelPropioCuerpo(h.collider.transform)) continue;
+        elegido = h;
+        acerto = true;
+        break;
+    }
+
+    if (acerto)
+    {
+        NetworkObject objetivo = elegido.collider.transform.root.GetComponent<NetworkObject>();
+        if (objetivo != null && objetivo.IsPlayerObject)
+        {
+            DanioAJugadorServerRpc(danioActual, objetivo.OwnerClientId);
+        }
+
+        if (efectoImpacto != null)
+            Instantiate(efectoImpacto, elegido.point, Quaternion.LookRotation(elegido.normal));
+    }
+
+    // efecto local inmediato en la boca del arma
+    Vector3 posicionDeLaBoca = PuntoDeDisparo();
+    if (efectoDisparo != null)
+        Instantiate(efectoDisparo, posicionDeLaBoca, bocaDelArma != null ? bocaDelArma.rotation : Quaternion.identity);
+
+    ReproducirDisparo();
+
+    // el instante de disparo viaja por red para reproducirse en el remoto sin retardo
+    DisparoEfectuadoClientRpc(posicionDeLaBoca);
+
+    // retroceso: el arma se inclina y vuelve; la vista se empuja hacia arriba
+    // (rotacionVertical positivo inclina hacia abajo, por eso se resta)
+    recoilArma = 1f;
+    if (controlCamara != null) controlCamara.rotacionVertical -= apuntando ? retrocesoActual * 0.7f : retrocesoActual;
+}
 
     // true si el transform pertenece al cuerpo/arma de ESTE jugador (para no autoimpactarse)
     bool DelPropioCuerpo(Transform t)
@@ -582,6 +611,7 @@ public class PlayerAstra : NetworkBehaviour
 
     void Recargar()
     {
+        if (armaActual == 3) return; // Desarmado: no puede recargar
         if (recargando)
         {
             if (Time.time >= recargaHasta) recargando = false;
