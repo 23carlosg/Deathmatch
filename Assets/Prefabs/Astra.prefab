@@ -902,10 +902,11 @@ GameObject:
   - component: {fileID: 7889516970651245639}
   - component: {fileID: 1025267398740188616}
   - component: {fileID: 1138999556117378477}
+  - component: {fileID: 4444000000000000001}
   - component: {fileID: 4809796186316444494}
   - component: {fileID: 6876227095543567802}
   m_Layer: 0
-  m_Name: PlayerAstra
+  m_Name: Astra
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1037,6 +1038,22 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!196 &4444000000000000001
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321298133441418328}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 0.5, y: 1, z: 0.5}
+  m_Center: {x: 0, y: 1, z: 0}
+  m_MoveThreshold: 0.1
+  m_TimeToStationary: 0.5
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
 --- !u!114 &4809796186316444494
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1050,7 +1067,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unity.Netcode.ClientNetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 0
   RotationInterpolationType: 0
@@ -1063,16 +1080,16 @@ MonoBehaviour:
   ScaleMaxInterpolationTime: 0.1
   AuthorityMode: 0
   TickSyncChildren: 0
-  UseUnreliableDeltas: 0
+  UseUnreliableDeltas: 1
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
   SyncRotAngleX: 1
   SyncRotAngleY: 1
   SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
@@ -1094,7 +1111,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d77c2b8a3f14e0c9a1b2c3d4e5f6072, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerAstra
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerNetworkMovement
   ShowTopMostFoldoutHeaderGroup: 1
   velocidadCaminar: 2.5
   velocidadCorrer: 6

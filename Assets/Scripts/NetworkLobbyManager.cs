@@ -35,6 +35,8 @@ public class NetworkLobbyManager : MonoBehaviour
     // Join Code generado por el host, para que los clientes lo lean
     public static string JoinCodeActual { get; private set; } = "";
 
+    // true cuando la escena de juego termino de cargar en esta maquina; mientras,
+    // Player no se mueve para no caer antes de que exista el piso
     public static bool MapaListo { get; private set; } = false;
     public static void ForzarMapaListoSiTarda() { MapaListo = true; }
 
