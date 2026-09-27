@@ -48,7 +48,7 @@ public class AgarrarItem : Interaccion
             hotbar.AddItem(data);
         }
 
-        PlayerAstra jugador = localPlayerObject.GetComponent<PlayerAstra>();
+        PlayerNetworkMovement jugador = localPlayerObject.GetComponent<PlayerNetworkMovement>();
         if (jugador != null)
         {
             if (data.tipoArma == ItemData.TipoArma.Rifle)
