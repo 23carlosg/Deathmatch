@@ -15,5 +15,6 @@
     <ui:VisualElement name="MainLobbyPanel" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Images/FondoMenu.jpg?fileID=2800000&amp;guid=a96f078777795d54fa3005e32d2bad8f&amp;type=3#FondoMenu&quot;); display: flex;">
         <ui:Button text="INICIAR HOST" name="IniciarHostButton" class="ButtonStyle" style="top: 400px; left: auto;"/>
         <ui:Button text="INICIAR CLIENTE" name="IniciarClienteButton" class="ButtonStyle" style="top: 500px; left: auto;"/>
+        <ui:TextField label="Text Field" placeholder-text="filler text" name="JoinCodeInput"/>
     </ui:VisualElement>
 </ui:UXML>

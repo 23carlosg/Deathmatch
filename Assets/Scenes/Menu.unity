@@ -495,7 +495,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb20f3c083c5cef40bb2e229b80f72c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkLobbyManager
-  ipDelHost: 127.0.0.1
   escenaDeJuego: SampleScene
   puntosDeSpawn:
   - {x: -134.0847, y: 1, z: 106.4802}
