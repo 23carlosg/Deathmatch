@@ -1,12 +1,10 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
-
 public class MainMenuUI : MonoBehaviour
 {
     private PanelRenderer panelRenderer;
 
-    // Referencia al NetworkLobbyManager
     [SerializeField] private NetworkLobbyManager networkLobbyManager;
 
     // Menu principal
@@ -25,11 +23,12 @@ public class MainMenuUI : MonoBehaviour
     private VisualElement mainLobbyPanel;
     private Button iniciarHostButton;
     private Button iniciarClienteButton;
+    private TextField joinCodeInput;     // <-- NUEVO
+    private Label joinCodeLabel;         // <-- NUEVO (para mostrar el código al host)
 
     private void Awake()
     {
         panelRenderer = GetComponent<PanelRenderer>();
-
         panelRenderer.RegisterUIReloadCallback(OnUIReload);
     }
 
@@ -40,10 +39,9 @@ public class MainMenuUI : MonoBehaviour
         optionsPanel = root.Q<VisualElement>("SettingPanel");
         mainLobbyPanel = root.Q<VisualElement>("MainLobbyPanel");
 
-        optionsPanel.style.display = DisplayStyle.None;
-        mainLobbyPanel.style.display = DisplayStyle.None;
-        if (mainMenuPanel != null)
-            mainMenuPanel.style.display = DisplayStyle.Flex;
+        if (optionsPanel != null) optionsPanel.style.display = DisplayStyle.None;
+        if (mainLobbyPanel != null) mainLobbyPanel.style.display = DisplayStyle.None;
+        if (mainMenuPanel != null) mainMenuPanel.style.display = DisplayStyle.Flex;
 
         // Botones
         playButton = root.Q<Button>("PlayButton");
@@ -53,24 +51,26 @@ public class MainMenuUI : MonoBehaviour
         iniciarHostButton = root.Q<Button>("IniciarHostButton");
         iniciarClienteButton = root.Q<Button>("IniciarClienteButton");
 
+        // Inputs de lobby
+        joinCodeInput = root.Q<TextField>("JoinCodeInput");     // <-- NUEVO
+        joinCodeLabel = root.Q<Label>("JoinCodeLabel");         // <-- NUEVO
+
         // Volumen
         volumeSlider = root.Q<Slider>("VolumeSlider");
 
         // Eventos
-        playButton.clicked += PlayGame;
-        settingsButton.clicked += OpenOptions;
-        quitButton.clicked += QuitGame;
-        backButton.clicked += CloseOptions;
-        iniciarHostButton.clicked += IniciarServidor;
-        iniciarClienteButton.clicked += UnirseServidor;
+        if (playButton != null) playButton.clicked += PlayGame;
+        if (settingsButton != null) settingsButton.clicked += OpenOptions;
+        if (quitButton != null) quitButton.clicked += QuitGame;
+        if (backButton != null) backButton.clicked += CloseOptions;
+        if (iniciarHostButton != null) iniciarHostButton.clicked += IniciarServidor;
+        if (iniciarClienteButton != null) iniciarClienteButton.clicked += UnirseServidor;
 
-        volumeSlider.RegisterValueChangedCallback(OnVolumeChanged);
-
+        if (volumeSlider != null) volumeSlider.RegisterValueChangedCallback(OnVolumeChanged);
     }
 
     private void PlayGame()
     {
-        // Oculta el menu principal
         mainMenuPanel.style.display = DisplayStyle.None;
         mainLobbyPanel.style.display = DisplayStyle.Flex;
     }
@@ -89,7 +89,7 @@ public class MainMenuUI : MonoBehaviour
 
     private void OnVolumeChanged(ChangeEvent<float> evt)
     {
-        AudioListener.volume = evt.newValue / 100f; // se usa 100f para que interprete el 100 como valor max 1
+        AudioListener.volume = evt.newValue / 100f;
     }
 
     private void QuitGame()
@@ -102,19 +102,40 @@ public class MainMenuUI : MonoBehaviour
         if (panelRenderer != null)
             panelRenderer.UnregisterUIReloadCallback(OnUIReload);
     }
-    
-    // ------------------LOBBY---------------------
 
-    private void IniciarServidor()
+    // ------------------ LOBBY ---------------------
+
+    private async void IniciarServidor()
     {
-        // La escena de juego la carga el NetworkLobbyManager via NetworkSceneManager,
-        // para que se replique sola a cada cliente que se conecte.
+        // Iniciar el host (crea la asignacion en Relay)
         networkLobbyManager.IniciarHost();
+
+        // Esperar a que el Join Code este disponible (lo genera Relay de forma asincrona)
+        // Timeout de seguridad: 10 segundos
+        float t = 0f;
+        while (string.IsNullOrEmpty(NetworkLobbyManager.JoinCodeActual) && t < 10f)
+        {
+            await System.Threading.Tasks.Task.Delay(100);
+            t += 0.1f;
+        }
+
+        if (joinCodeLabel != null && !string.IsNullOrEmpty(NetworkLobbyManager.JoinCodeActual))
+            joinCodeLabel.text = $"Código: {NetworkLobbyManager.JoinCodeActual}";
+        else
+            Debug.LogWarning("[UI] No se pudo obtener el Join Code");
     }
 
     private void UnirseServidor()
     {
-        // llamar al script NetworkLobbyManager
-        networkLobbyManager.IniciarCliente();
+        // Leer el codigo que escribio el jugador y pasarselo al NetworkLobbyManager
+        string codigo = joinCodeInput != null ? joinCodeInput.value.Trim() : "";
+
+        if (string.IsNullOrEmpty(codigo))
+        {
+            Debug.LogWarning("[UI] Ingresá un Join Code antes de unirte");
+            return;
+        }
+
+        networkLobbyManager.IniciarCliente(codigo);
     }
 }
