@@ -68,6 +68,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
 
     [Header("Salud")]
     public float saludMaxima = 100f;
+    public float tiempoParaRevivir = 5f;
 
     [Header("Referencias (se buscan solas si quedan vacias)")]
     public Animator animator;
@@ -92,6 +93,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     public bool Muerto { get; private set; }
+    private bool reviviendoAutomaticamente = false;
     public float Salud => redSalud.Value;
 
     bool esLocal = true;
@@ -650,6 +652,20 @@ void Disparar()
     {
         if (Muerto) return;
         redSalud.Value = Mathf.Max(0f, redSalud.Value - cantidad);
+
+        // Si esto lo mató, arranca el temporizador de revivir automático (solo una vez)
+        if (redSalud.Value <= 0f && !reviviendoAutomaticamente)
+        {
+            reviviendoAutomaticamente = true;
+            StartCoroutine(RevivirAutomaticamenteCoroutine());
+        }
+    }
+
+    IEnumerator RevivirAutomaticamenteCoroutine()
+    {
+        yield return new WaitForSeconds(tiempoParaRevivir);
+        RevivirEnServidor();
+        reviviendoAutomaticamente = false;
     }
 
     // Reproduce en las instancias remotas el instante de disparo del dueño.
@@ -745,8 +761,14 @@ void Disparar()
     [ServerRpc]
     void RevivirServerRpc()
     {
+        RevivirEnServidor();
+    }
+
+    // Lógica real de revivir; la puede llamar el RPC (revivir manual) o la corrutina (revivir automático)
+    void RevivirEnServidor()
+    {
         redSalud.Value = saludMaxima;
-        Vector3 posicion = transform.position + Vector3.up * 1.5f;
+        Vector3 posicion = NetworkLobbyManager.ObtenerPuntoDeRespawn();
         RevivirClientRpc(posicion);
     }
 

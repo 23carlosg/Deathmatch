@@ -279,4 +279,16 @@ public class NetworkLobbyManager : MonoBehaviour
         NetworkManager.Singleton.OnServerStarted -= CargarEscenaDeJuego;
         NetworkManager.Singleton.SceneManager.LoadScene(escenaDeJuego, UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
+    public static Vector3 ObtenerPuntoDeRespawn()
+    {
+        if (instancia == null || instancia.ordenSpawnBarajado == null || instancia.ordenSpawnBarajado.Length == 0)
+            return instancia != null ? instancia.PuntoCentralDelPiso() : Vector3.zero;
+
+        int indice = Random.Range(0, instancia.ordenSpawnBarajado.Length);
+        return instancia.ordenSpawnBarajado[indice];
+    }
+
+
+
 }
+
