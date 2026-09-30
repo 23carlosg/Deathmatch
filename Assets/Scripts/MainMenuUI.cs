@@ -5,8 +5,6 @@ public class MainMenuUI : MonoBehaviour
 {
     private PanelRenderer panelRenderer;
 
-    [SerializeField] private NetworkLobbyManager networkLobbyManager;
-
     // Menu principal
     private VisualElement mainMenuPanel;
     private Button playButton;
@@ -23,8 +21,9 @@ public class MainMenuUI : MonoBehaviour
     private VisualElement mainLobbyPanel;
     private Button iniciarHostButton;
     private Button iniciarClienteButton;
-    private TextField joinCodeInput;     // <-- NUEVO
-    private Label joinCodeLabel;         // <-- NUEVO (para mostrar el código al host)
+    private TextField joinCodeInput;
+
+    private NetworkLobbyManager Lobby => NetworkLobbyManager.Instancia;
 
     private void Awake()
     {
@@ -52,13 +51,18 @@ public class MainMenuUI : MonoBehaviour
         iniciarClienteButton = root.Q<Button>("IniciarClienteButton");
 
         // Inputs de lobby
-        joinCodeInput = root.Q<TextField>("JoinCodeInput");     // <-- NUEVO
-        joinCodeLabel = root.Q<Label>("JoinCodeLabel");         // <-- NUEVO
+        joinCodeInput = root.Q<TextField>("JoinCodeInput");
 
         // Volumen
         volumeSlider = root.Q<Slider>("VolumeSlider");
 
         // Eventos
+        if (joinCodeInput != null)
+        {
+            joinCodeInput.UnregisterValueChangedCallback(OnJoinCodeChanged);
+            joinCodeInput.RegisterValueChangedCallback(OnJoinCodeChanged);
+            joinCodeInput.maxLength = 6;
+        }
         if (playButton != null) playButton.clicked += PlayGame;
         if (settingsButton != null) settingsButton.clicked += OpenOptions;
         if (quitButton != null) quitButton.clicked += QuitGame;
@@ -67,6 +71,13 @@ public class MainMenuUI : MonoBehaviour
         if (iniciarClienteButton != null) iniciarClienteButton.clicked += UnirseServidor;
 
         if (volumeSlider != null) volumeSlider.RegisterValueChangedCallback(OnVolumeChanged);
+    }
+
+    private void OnJoinCodeChanged(ChangeEvent<string> evt)
+    {
+        string mayus = evt.newValue.ToUpper();
+        if (mayus != evt.newValue)
+            joinCodeInput.SetValueWithoutNotify(mayus);
     }
 
     private void PlayGame()
@@ -107,28 +118,31 @@ public class MainMenuUI : MonoBehaviour
 
     private async void IniciarServidor()
     {
-        // Iniciar el host (crea la asignacion en Relay)
-        networkLobbyManager.IniciarHost();
-
-        // Esperar a que el Join Code este disponible (lo genera Relay de forma asincrona)
-        // Timeout de seguridad: 10 segundos
-        float t = 0f;
-        while (string.IsNullOrEmpty(NetworkLobbyManager.JoinCodeActual) && t < 10f)
+        if (Lobby == null)
         {
-            await System.Threading.Tasks.Task.Delay(100);
-            t += 0.1f;
+            Debug.LogWarning("Error interno: no hay NetworkLobbyManager");
+            return;
         }
+        if (iniciarHostButton != null) iniciarHostButton.SetEnabled(false);
+        iniciarClienteButton.pickingMode = PickingMode.Ignore;
+        string joinCode = await Lobby.IniciarHost();
 
-        if (joinCodeLabel != null && !string.IsNullOrEmpty(NetworkLobbyManager.JoinCodeActual))
-            joinCodeLabel.text = $"Código: {NetworkLobbyManager.JoinCodeActual}";
-        else
+        if (string.IsNullOrEmpty(joinCode))
+        {
             Debug.LogWarning("[UI] No se pudo obtener el Join Code");
+            if (iniciarHostButton != null) iniciarHostButton.SetEnabled(true);
+            return;
+        }
     }
 
-    private void UnirseServidor()
+    private async void UnirseServidor()
     {
-        // Leer el codigo que escribio el jugador y pasarselo al NetworkLobbyManager
-        string codigo = joinCodeInput != null ? joinCodeInput.value.Trim() : "";
+        if (Lobby == null)
+        {
+            Debug.LogWarning("Error interno: no hay NetworkLobbyManager");
+            return;
+        }
+        string codigo = joinCodeInput != null ? joinCodeInput.value.Trim().ToUpper() : "";
 
         if (string.IsNullOrEmpty(codigo))
         {
@@ -136,6 +150,21 @@ public class MainMenuUI : MonoBehaviour
             return;
         }
 
-        networkLobbyManager.IniciarCliente(codigo);
+        // Deshabilitar el botón 3 segundos desde el clic
+        if (iniciarClienteButton != null) iniciarClienteButton.SetEnabled(false);
+        var espera = System.Threading.Tasks.Task.Delay(3000);
+
+        bool ok = await Lobby.IniciarCliente(codigo);
+
+        if (!ok)
+        {
+            Debug.LogWarning("[UI] No se pudo unir. Revisá el código e intentá de nuevo.");
+            joinCodeInput.value = "";
+            joinCodeInput.textEdition.placeholder = "Esta mal ingrese el codigo correcto";
+        }
+        // Esperar lo que falte para completar los 3 segundos
+        await espera;
+
+        if (iniciarClienteButton != null) iniciarClienteButton.SetEnabled(true);
     }
 }

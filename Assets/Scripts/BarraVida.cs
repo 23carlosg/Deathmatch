@@ -2,15 +2,15 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class BarraVida : MonoBehaviour
+public class HealthBarUI : MonoBehaviour
 {
     public Slider slider;
+    public GameObject fill; // Arrastrá acá el objeto "Fill" (dentro de Fill Area)
 
     private PlayerNetworkMovement jugadorLocal;
 
     void Update()
     {
-        // Busca al jugador local si todavía no lo tiene (por ejemplo, al iniciar la partida)
         if (jugadorLocal == null)
         {
             if (NetworkManager.Singleton == null || NetworkManager.Singleton.LocalClient == null) return;
@@ -24,6 +24,17 @@ public class BarraVida : MonoBehaviour
             slider.maxValue = jugadorLocal.saludMaxima;
         }
 
-        slider.value = jugadorLocal.Salud;
+
+        bool debeVerse = !jugadorLocal.Muerto;
+
+        if (fill != null && fill.activeSelf != debeVerse)
+        {
+            fill.SetActive(debeVerse);
+        }
+
+        if (debeVerse)
+        {
+            slider.value = jugadorLocal.Salud;
+        }
     }
 }

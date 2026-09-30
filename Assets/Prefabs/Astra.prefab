@@ -903,7 +903,6 @@ GameObject:
   - component: {fileID: 7889516970651245639}
   - component: {fileID: 1025267398740188616}
   - component: {fileID: 1138999556117378477}
-  - component: {fileID: 4444000000000000001}
   - component: {fileID: 4809796186316444494}
   - component: {fileID: 6876227095543567802}
   - component: {fileID: 159179724157228310}
@@ -1001,7 +1000,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2052770939
+  GlobalObjectIdHash: 1894389937
   InScenePlacedSourceGlobalObjectIdHash: 1894389937
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -1041,22 +1040,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!196 &4444000000000000001
-NavMeshObstacle:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2321298133441418328}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Shape: 1
-  m_Extents: {x: 0.5, y: 1, z: 0.5}
-  m_Center: {x: 0, y: 1, z: 0}
-  m_MoveThreshold: 0.1
-  m_TimeToStationary: 0.5
-  m_Carve: 1
-  m_CarveOnlyStationary: 1
 --- !u!114 &4809796186316444494
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1135,24 +1118,27 @@ MonoBehaviour:
   danioRifle: 20
   retrocesoRifle: 0.5
   retrocesoRotacionRifle: 6
+  cadenciaRifle: 6
   danioPistola: 25
   retrocesoPistola: 0
   retrocesoRotacionPistola: 6
+  cadenciaPistola: 4
   bocaDelArma: {fileID: 0}
   efectoDisparo: {fileID: 0}
   efectoImpacto: {fileID: 0}
   alcance: 200
-  cadencia: 6
   dispersion: 1.5
   sonidoDisparo: {fileID: 8300000, guid: 227ad2ea2053e7b45bffd55b6b2824af, type: 3}
   volumenDisparo: 1
   saludMaxima: 100
+  tiempoParaRevivir: 5
   animator: {fileID: 2547701997046352279}
   controlCamara: {fileID: 0}
   armaRifle: {fileID: 0}
   armaPistola: {fileID: 0}
   tieneRifle: 0
   tienePistola: 0
+  radioCuerpoBot: 0.55
 --- !u!114 &159179724157228310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3030,27 +3016,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1288426275945001905, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1288426275945001905, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1288426275945001905, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 120
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1288426275945001905, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1288426275945001905, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 70
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1288426275945001905, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -60
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4934680295950373835, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_Pivot.x
@@ -3134,27 +3120,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5592873091647390224, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5592873091647390224, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5592873091647390224, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 120
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5592873091647390224, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5592873091647390224, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 205
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5592873091647390224, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -60
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6119664196232038537, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_Name
@@ -3162,27 +3148,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6449748901331932314, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6449748901331932314, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6449748901331932314, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 120
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6449748901331932314, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6449748901331932314, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 340
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6449748901331932314, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -60
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

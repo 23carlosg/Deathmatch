@@ -20,6 +20,14 @@ public class PlayerCamera : MonoBehaviour
     // Estado de muerte del dueño, escrito por PlayerNetworkMovement y consultado por la camara
     public static bool DueñoMuerto { get; set; }
 
+    // Menu de pausa
+    private PauseMenuUI pausa;
+
+void Start()
+{
+    pausa = FindAnyObjectByType<PauseMenuUI>();
+}
+
     void Awake()
     {
         if (jugador == null && transform.parent != null)
@@ -34,13 +42,17 @@ public class PlayerCamera : MonoBehaviour
         // si el dueño esta muerto, el cuerpo queda quieto
         if (DueñoMuerto) return;
 
-        // Esc para liberar o capturar el mouse
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            bool bloqueado = Cursor.lockState == CursorLockMode.Locked;
-            Cursor.lockState = bloqueado ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = !bloqueado;
+            if (pausa == null) pausa = FindAnyObjectByType<PauseMenuUI>();
+            // PRUEBA
+            Debug.Log("[Camara] Esc apretado. pausa = " + (pausa != null ? "OK" : "NULL"));
+            // PRUEBA
+            if (pausa != null) pausa.Alternar();
         }
+
+        // con el menú abierto la cámara no gira
+        if (PauseMenuUI.Abierto) return;
 
         if (jugador == null || Mouse.current == null || Cursor.lockState != CursorLockMode.Locked)
             return;

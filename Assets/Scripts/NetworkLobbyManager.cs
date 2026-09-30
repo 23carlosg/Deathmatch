@@ -39,6 +39,7 @@ public class NetworkLobbyManager : MonoBehaviour
     // Player no se mueve para no caer antes de que exista el piso
     public static bool MapaListo { get; private set; } = false;
     public static void ForzarMapaListoSiTarda() { MapaListo = true; }
+    public static void ResetearMapaListo() { MapaListo = false; }
 
     public static bool EscenaDeJuegoActiva
     {
@@ -52,6 +53,7 @@ public class NetworkLobbyManager : MonoBehaviour
     public static bool PuedeMoverse => MapaListo || EscenaDeJuegoActiva;
 
     static NetworkLobbyManager instancia;
+    public static NetworkLobbyManager Instancia => instancia;
 
     void Awake()
     {
@@ -177,10 +179,11 @@ public class NetworkLobbyManager : MonoBehaviour
     // ---------------------------------------------------------------
     // HOST: crea asignacion en Relay y arranca el host
     // ---------------------------------------------------------------
-    public async void IniciarHost()
+    public async Task<string> IniciarHost()
     {
         ValidadPuntos();
         BarajarPuntosDeSpawn();
+        JoinCodeActual = "";
 
         try
         {
@@ -195,7 +198,7 @@ public class NetworkLobbyManager : MonoBehaviour
 
             // Configurar UnityTransport con los datos de Relay
             var transporte = ObtenerTransporte();
-            if (transporte == null) return;
+            if (transporte == null) return null;
 
             var relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
             transporte.SetRelayServerData(relayServerData);
@@ -205,52 +208,77 @@ public class NetworkLobbyManager : MonoBehaviour
             if (NetworkManager.Singleton.StartHost())
             {
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += AlTerminarDeCargarEscena;
+                return JoinCodeActual;
             }
             else
             {
                 NetworkManager.Singleton.OnServerStarted -= CargarEscenaDeJuego;
                 Debug.LogError("[Lobby] ERROR: no se pudo iniciar el host");
+                return null;
             }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"[Lobby] ERROR al iniciar host: {e.Message}");
+            return null;
         }
     }
 
     // ---------------------------------------------------------------
     // CLIENTE: se conecta con el Join Code
     // ---------------------------------------------------------------
-    public async void IniciarCliente(string joinCode)
+    public async Task<bool> IniciarCliente(string joinCode)
     {
         ValidadPuntos();
 
         try
         {
+            // Si quedó una conexión previa a medias, se limpia
+            var nm = NetworkManager.Singleton;
+            if (nm.IsListening || nm.ShutdownInProgress)
+            {
+                if (!nm.ShutdownInProgress) nm.Shutdown();
+
+                float espera = 0f;
+                while ((nm.ShutdownInProgress || nm.IsListening) && espera < 3f)
+                {
+                    await Task.Yield();
+                    espera += Time.unscaledDeltaTime;
+                }
+            }
+
             await InicializarServicios();
 
-            // Unirse a la asignacion Relay con el Join Code
             var allocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
 
             var transporte = ObtenerTransporte();
-            if (transporte == null) return;
+            if (transporte == null) return false;
 
             var relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
             transporte.SetRelayServerData(relayServerData);
 
-            // Arrancar cliente NGO
             if (NetworkManager.Singleton.StartClient())
             {
+                NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= AlTerminarDeCargarEscena;
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += AlTerminarDeCargarEscena;
+                return true;
             }
-            else
-            {
-                Debug.LogError("[Lobby] ERROR: no se pudo conectar");
-            }
+
+            Debug.LogError("[Lobby] ERROR: no se pudo conectar");
+            return false;
+        }
+        catch (RelayServiceException e)
+        {
+            // Código inexistente, vencido o mal escrito
+            Debug.LogWarning($"[Lobby] Join Code inválido o sala no disponible: {e.Message}");
+            return false;
         }
         catch (System.Exception e)
         {
             Debug.LogError($"[Lobby] ERROR al conectar cliente: {e.Message}");
+            if (NetworkManager.Singleton.IsListening)
+                NetworkManager.Singleton.Shutdown();
+            return false;
         }
     }
 
