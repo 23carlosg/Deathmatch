@@ -64,6 +64,9 @@ public class NetworkLobbyManager : MonoBehaviour
         }
         else if (instancia != this)
         {
+            var nmDuplicado = GetComponent<NetworkManager>() ?? FindAnyObjectByType<NetworkManager>();
+            if (nmDuplicado != null && nmDuplicado != NetworkManager.Singleton)
+                Destroy(nmDuplicado.gameObject);
             Destroy(gameObject);
         }
     }
@@ -229,6 +232,7 @@ public class NetworkLobbyManager : MonoBehaviour
     // ---------------------------------------------------------------
     public async Task<bool> IniciarCliente(string joinCode)
     {
+        JoinCodeActual = "";
         ValidadPuntos();
 
         try
