@@ -669,7 +669,7 @@ void Disparar()
     }
 
     // Reproduce en las instancias remotas el instante de disparo del dueño.
-    [ClientRpc]
+    [Rpc(SendTo.ClientsAndHost)]
     void DisparoEfectuadoClientRpc(Vector3 posicionDeLaBoca)
     {
         if (esLocal) return;
