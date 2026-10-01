@@ -7,7 +7,8 @@ using UnityEngine.InputSystem;
 /// - La camara es HIJA del cuerpo: sigue su posicion siempre, sin codigo extra
 /// - El pitch (arriba/abajo) queda solo en la camara
 /// - Esc libera / captura el mouse
-/// Todo se aplica en LateUpdate (despues de que Player movio el cuerpo).
+/// Todo se aplica en LateUpdate (despues de que PlayerNetworkMovement movio el cuerpo).
+/// Si el jugador esta muerto no gira nada y no captura el cursor.
 /// </summary>
 public class PlayerCamera : MonoBehaviour
 {
@@ -15,6 +16,17 @@ public class PlayerCamera : MonoBehaviour
     public float sensibilidad = 2f;
     public float limiteVertical = 80f;
     public float rotacionVertical;       // inclinacion actual (pitch)
+
+    // Estado de muerte del dueño, escrito por PlayerNetworkMovement y consultado por la camara
+    public static bool DueñoMuerto { get; set; }
+
+    // Menu de pausa
+    private PauseMenuUI pausa;
+
+void Start()
+{
+    pausa = FindAnyObjectByType<PauseMenuUI>();
+}
 
     void Awake()
     {
@@ -27,13 +39,20 @@ public class PlayerCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        // Esc para liberar o capturar el mouse
+        // si el dueño esta muerto, el cuerpo queda quieto
+        if (DueñoMuerto) return;
+
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
-            bool bloqueado = Cursor.lockState == CursorLockMode.Locked;
-            Cursor.lockState = bloqueado ? CursorLockMode.None : CursorLockMode.Locked;
-            Cursor.visible = !bloqueado;
+            if (pausa == null) pausa = FindAnyObjectByType<PauseMenuUI>();
+            // PRUEBA
+            Debug.Log("[Camara] Esc apretado. pausa = " + (pausa != null ? "OK" : "NULL"));
+            // PRUEBA
+            if (pausa != null) pausa.Alternar();
         }
+
+        // con el menú abierto la cámara no gira
+        if (PauseMenuUI.Abierto) return;
 
         if (jugador == null || Mouse.current == null || Cursor.lockState != CursorLockMode.Locked)
             return;
