@@ -18,7 +18,7 @@ public class PlayerCamera : MonoBehaviour
     public float rotacionVertical;       // inclinacion actual (pitch)
 
     // Estado de muerte del dueño, escrito por PlayerNetworkMovement y consultado por la camara
-    public static bool DueñoMuerto { get; set; }
+    public static bool DuenoMuerto { get; set; }
 
     // Menu de pausa
     private PauseMenuUI pausa;
@@ -40,14 +40,11 @@ void Start()
     void LateUpdate()
     {
         // si el dueño esta muerto, el cuerpo queda quieto
-        if (DueñoMuerto) return;
+        if (DuenoMuerto) return;
 
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             if (pausa == null) pausa = FindAnyObjectByType<PauseMenuUI>();
-            // PRUEBA
-            Debug.Log("[Camara] Esc apretado. pausa = " + (pausa != null ? "OK" : "NULL"));
-            // PRUEBA
             if (pausa != null) pausa.Alternar();
         }
 

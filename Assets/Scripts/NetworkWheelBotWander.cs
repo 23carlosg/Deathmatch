@@ -2,28 +2,6 @@ using UnityEngine;
 using UnityEngine.AI;
 using Unity.Netcode;
 
-/// <summary>
-/// Bot rueda que deambula por el NavMesh (wander) con autoridad del SERVIDOR.
-///
-/// Rotación: el modelo FBX (de Blender) se importa con el mesh "acostado": queda
-/// derecho gracias a una inclinación de -90° en X en la raiz del modelo. Como el
-/// NavMeshAgent (updateRotation) reescribe la rotación de SU transform con yaw puro
-/// en cada frame, esa inclinación no puede vivir en el mismo objeto que el agent
-/// (se pisa al entrar en Play y el bot queda mirando al piso).
-/// Por eso el prefab tiene un WRAPPER: el objeto raiz (identidad) lleva TODOS los
-/// componentes (NavMeshAgent, red, física) y el modelo FBX cuelga como hijo con su
-/// -90°X intacto. El agent gira el wrapper; el modelo de abajo nunca se entera.
-///
-/// Red: el servidor elige los destinos; NetworkTransform replica posición y rotación
-/// de la raiz a los clientes. La rapidez del bot viaja en una NetworkVariable para que
-/// la rueda gire también en las máquinas remotas (los hijos no se sincronizan).
-/// El Rigidbody va en kinemático para que la física no pelee con el NavMeshAgent.
-///
-/// Apoyo: al spawnear se miden los bounds reales del modelo y se corre el hijo para
-/// que la parte mas baja (la rueda) toque exactamente el plano donde el agent camina
-/// (baseOffset = 0). Así no importa la escala ni el pivote del FBX: nunca flota ni
-/// se hunde.
-/// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Rigidbody))]
 public class NetworkWheelBotWander : NetworkBehaviour
@@ -53,8 +31,7 @@ public class NetworkWheelBotWander : NetworkBehaviour
     private Vector3 ultimaPosicion;
     private float ultimoChequeoTraba;
 
-    readonly NetworkVariable<float> redVelocidad = new NetworkVariable<float>(0f,
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    readonly NetworkVariable<float> redVelocidad = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     void Awake()
     {
@@ -146,8 +123,7 @@ public class NetworkWheelBotWander : NetworkBehaviour
         if (Time.time - ultimoChequeoTraba < stuckCheckTime) return;
         ultimoChequeoTraba = Time.time;
 
-        if (agent.isOnNavMesh && agent.hasPath
-            && Physics.Raycast(transform.position + Vector3.up * 0.3f, transform.forward, 0.5f, ~0, QueryTriggerInteraction.Ignore))
+        if (agent.isOnNavMesh && agent.hasPath && Physics.Raycast(transform.position + Vector3.up * 0.3f, transform.forward, 0.5f, ~0, QueryTriggerInteraction.Ignore))
         {
             agent.SetDestination(ElegirDestinoDespejado());
             timer = 0f;

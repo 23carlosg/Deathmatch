@@ -508,7 +508,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb20f3c083c5cef40bb2e229b80f72c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkLobbyManager
-  escenaDeJuego: SampleScene
+  escenaDeJuego: Arena
   puntosDeSpawn:
   - {x: -134.0847, y: 1, z: 106.4802}
   - {x: -134.0847, y: 1, z: 146.4802}

@@ -9,12 +9,6 @@ public class AgarrarItem : Interaccion
     {
         base.Interactuar();
 
-        if (!NetworkObject.IsSpawned)
-        {
-            Debug.Log("Este item ya fue agarrado, no está spawneado");
-            return;
-        }
-
         // El cliente le pide permiso al servidor para agarrar el item
         RequestPickupRpc();
     }

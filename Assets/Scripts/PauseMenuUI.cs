@@ -102,10 +102,6 @@ public class PauseMenuUI : MonoBehaviour
     {
         Abierto = true;
 
-        // PRUEBA
-        Debug.Log($"[Pausa] Abrir. pausePanel={(pausePanel != null)}, label={(joinCodeLabel != null)}");
-        // PRUEBA
-
         if (joinCodeLabel != null)
         {
             string codigo = NetworkLobbyManager.JoinCodeActual;

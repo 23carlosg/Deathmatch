@@ -3,20 +3,6 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Jugador en red para el personaje Astra (tercera persona).
-/// - Movimiento WASD/flechas con CharacterController: caminar, correr con Shift, saltar con Espacio
-/// - Camara tercera persona: el mouse gira el CUERPO (yaw) y la camara (pitch, es hija del cuerpo)
-/// - Apuntar con click derecho: camara sobre el hombro derecho + zoom (FOV) + mira cerrada
-/// - Disparar con click izquierdo: raycast desde la camara (a donde apunta el crosshair), danio
-///   aplicado por el SERVIDOR, flash en la boca del arma, efecto de impacto y retroceso de camara
-/// - Recargar con R (tiempo real), cambiar de arma con 1/2/3 (el modelo viaja por red)
-/// - Animaciones por codigo: VelX/VelY alimentan el blend direccional; el int Arma y el bool
-///   isGrounded eligen los estados de salto, decididos en el mismo frame del impulso.
-/// - Red: posicion via ClientNetworkTransform (autoridad del dueño), estado via NetworkVariables
-///   del dueño; la salud la escribe solo el servidor.
-/// - Los instantes de disparo viajan por Rpc para verse en el remoto sin retardo.
-/// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerNetworkMovement : NetworkBehaviour
 {
@@ -75,11 +61,10 @@ public class PlayerNetworkMovement : NetworkBehaviour
     public PlayerCamera controlCamara;
 
     [Header("Armas (modelos en la mano; se buscan solos si quedan vacios)")]
-    public GameObject armaRifle;           // modelo del rifle montado en la mano derecha
+    public GameObject armaRifle;          
     public GameObject armaPistola; 
-    // Qué armas tiene el jugador disponibles (se activan al agarrarlas con AgarrarItem)
     public bool tieneRifle = false;
-    public bool tienePistola = false;        // modelo de la pistola montado en la mano derecha
+    public bool tienePistola = false;
 
     readonly NetworkVariable<float> redVelX = new NetworkVariable<float>(0f,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -118,7 +103,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
     float recoilArma;
     Vector3 posReposoRifle, posReposoPistola;
     Quaternion rotReposoRifle, rotReposoPistola;
-    int armaActual = 3;      // 1 rifle, 2 pistola, 3 desarmado
+    int armaActual = 3;      // 1 Pistola, 2 Rifle , 3 desarmado
     int armaAplicada = -1;
 
     void Awake()
@@ -154,7 +139,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
             mira = Crosshair.Crear();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            PlayerCamera.DueñoMuerto = false;
+            PlayerCamera.DuenoMuerto = false;
             StartCoroutine(SalvedadPorSiElMapaNoAvisa());
             StartCoroutine(AsegurarMiraTrasCargaDeEscena());
         }
@@ -290,7 +275,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
         if (Keyboard.current.digit3Key.wasPressedThisFrame) CambiarArma(3);
     }
 
-    // Cambia el arma en la mano (1 rifle, 2 pistola, 3 desarmado) y lo publica por red
+    // Cambia el arma en la mano (1 pistola , 2 pistola, 3 desarmado) y lo publica por red
     public void CambiarArma(int nueva)
     {
         if (Muerto || armaActual == nueva) return;
@@ -336,8 +321,6 @@ public class PlayerNetworkMovement : NetworkBehaviour
                 bocaDelArma = t;
             }
         }
-        if (armaRifle == null && armaPistola == null)
-            Debug.LogWarning("[PlayerNetworkMovement] No encontre los modelos de las armas bajo la mano: arrastralos en el Inspector del prefab (Arma Rifle / Arma Pistola).");
     }
 
     void GuardarPoseDeReposoDeLasArmas()
@@ -390,8 +373,6 @@ public class PlayerNetworkMovement : NetworkBehaviour
         Quaternion reposoMundo = activa.parent != null ? activa.parent.rotation * rotReposo : rotReposo;
         Vector3 ejeDerechaDelArma = reposoMundo * Vector3.right;
         float rotacionRecoilActual = armaActual == 2 ? retrocesoRotacionPistola : retrocesoRotacionRifle;
-
-        Debug.Log($"recoilArma={recoilArma}, armaActual={armaActual}, rotacionRecoilActual={rotacionRecoilActual}, activa={activa.name}"); // TEMPORAL
 
         Quaternion inclinadaMundo = Quaternion.AngleAxis(-recoilArma * rotacionRecoilActual, ejeDerechaDelArma) * reposoMundo;
         activa.localRotation = activa.parent != null
@@ -522,6 +503,7 @@ void Disparar()
 {
     if (armaActual == 3) return;
     if (Mouse.current == null) return;
+    if (PauseMenuUI.Abierto) return;
 
     // La pistola dispara solo con click (una vez por apretada); el rifle es automático mientras se mantiene
     bool gatilloApretado = armaActual == 2
@@ -605,14 +587,9 @@ void Disparar()
         return PuntoDelCuerpoEnMundo(new Vector3(0.25f, 1.35f, 0.7f));
     }
 
-    Vector3 PuntoDelCuerpoEnMundo(Vector3 puntoLocal)
+    Vector3 PuntoDelCuerpoEnMundo(Vector3 puntoLocal) 
     {
-        GameObject auxiliar = new GameObject("Aux");
-        auxiliar.transform.SetParent(transform, false);
-        auxiliar.transform.localPosition = puntoLocal;
-        Vector3 resultado = auxiliar.transform.position;
-        Destroy(auxiliar);
-        return resultado;
+        return transform.TransformPoint(puntoLocal);
     }
 
     // ------------------------- RECARGA -------------------------
@@ -729,7 +706,7 @@ void Disparar()
         if (esLocal)
         {
             apuntando = false;
-            PlayerCamera.DueñoMuerto = Muerto;
+            PlayerCamera.DuenoMuerto = Muerto;
             if (mira != null) mira.Mostrar(!Muerto);
             if (Muerto)
             {
