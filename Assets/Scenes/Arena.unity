@@ -54986,6 +54986,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   spaceBetween: 2
+  meteorSettings: {fileID: 11400000, guid: c9bef19ffae578348912b7677f956167, type: 2}
 --- !u!4 &1661443244
 Transform:
   m_ObjectHideFlags: 0

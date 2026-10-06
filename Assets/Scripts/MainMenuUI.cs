@@ -17,6 +17,9 @@ public class MainMenuUI : MonoBehaviour
     private Slider volumeSlider;
     private Label volumeValue;
 
+    //Asteroides
+    public MeteorSettings meteorSettings;
+
     // Lobby
     private VisualElement mainLobbyPanel;
     private Button iniciarHostButton;
@@ -49,6 +52,22 @@ public class MainMenuUI : MonoBehaviour
         backButton = root.Q<Button>("BackButton");
         iniciarHostButton = root.Q<Button>("IniciarHostButton");
         iniciarClienteButton = root.Q<Button>("IniciarClienteButton");
+
+        //Asteroides
+        DropdownField asteroideDropdown = root.Q<DropdownField>("AsteroideSetting");
+
+        if (asteroideDropdown != null && meteorSettings != null)
+        {
+            // Poner como seleccionado el valor actual guardado
+            asteroideDropdown.value = meteorSettings.maxAsteroidsCount.ToString();
+
+            // Escuchar cambios
+            asteroideDropdown.RegisterValueChangedCallback(evt =>
+            {
+                meteorSettings.maxAsteroidsCount = int.Parse(evt.newValue);
+                Debug.Log($"Meteoritos configurados: {meteorSettings.maxAsteroidsCount}");
+            });
+        }
 
         // Inputs de lobby
         joinCodeInput = root.Q<TextField>("JoinCodeInput");

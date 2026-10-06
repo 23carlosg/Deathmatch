@@ -32,10 +32,24 @@ namespace Asteroids
         [Tooltip("Minimum distance between spawned asteroids.")]
         public float spaceBetween = 2f;
 
+        [Tooltip("Configuracion global del menu (cantidad de meteoritos elegida por el usuario).")]
+        public MeteorSettings meteorSettings;
+
         private List<Vector4> asteroidPositionsAndSizes = new List<Vector4>(); // Posiciones (xyz) y tamanos (w)
 
         void Start()
         {
+            // Leer la cantidad de asteroides elegida en el menu
+            if (meteorSettings != null)
+            {
+                maxAsteroidsCount = meteorSettings.maxAsteroidsCount;
+                Debug.Log($"[Arena] Generando {maxAsteroidsCount} asteroides");
+            }
+            else
+            {
+                Debug.LogWarning("[Arena] meteorSettings no asignado. Usando valor por defecto: " + maxAsteroidsCount);
+            }
+
             // Si no hay Sun asignado, usamos este mismo objeto como centro
             if (sun == null)
             {
@@ -76,7 +90,6 @@ namespace Asteroids
                 float verticalDensity = verticalSpreadCurve.Evaluate(i / 360f);
 
                 // Cantidad de asteroides para este angulo segun la densidad horizontal.
-                // CeilToInt asegura al menos 1 si la densidad es mayor que 0.
                 int asteroidsInThisSegment = Mathf.CeilToInt(horizontalDensity * (maxAsteroidsCount / 360f));
 
                 for (int j = 0; j < asteroidsInThisSegment && currentAsteroidsCount < maxAsteroidsCount; j++)

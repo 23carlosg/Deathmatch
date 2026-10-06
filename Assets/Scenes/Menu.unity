@@ -342,6 +342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc62fbc80108f3a449c7622be3bfe760, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuUI
+  meteorSettings: {fileID: 11400000, guid: c9bef19ffae578348912b7677f956167, type: 2}
 --- !u!1 &1407899128
 GameObject:
   m_ObjectHideFlags: 0
