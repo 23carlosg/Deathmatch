@@ -18,8 +18,8 @@
         <ui:Button text="INICIAR CLIENTE" name="IniciarClienteButton" focusable="true" class="ButtonStyle" style="top: 570px; left: auto; visibility: visible; display: flex;"/>
         <ui:TextField label="" placeholder-text="INGRESE EL CODIGO" name="JoinCodeInput" style="height: 68px; width: 634px; font-size: 35px; -unity-text-align: upper-left; white-space: nowrap; text-overflow: clip; -unity-background-image-tint-color: rgb(255, 255, 255); background-color: rgb(27, 27, 27); transform-origin: center; left: auto; align-self: center; align-content: flex-start; top: 615px; color: rgb(0, 0, 0); -unity-font-style: bold; -unity-text-outline-color: rgb(255, 255, 255);"/>
     </ui:VisualElement>
-    <ui:VisualElement name="PausePanel" style="flex-grow: 1; display: none;">
-        <ui:Label text="CODIGO" name="PauseJoinCodeLabel" style="font-size: 40px; width: 321px;"/>
+    <ui:VisualElement name="PausePanel" style="flex-grow: 1; display: none; background-color: rgba(0, 0, 0, 0);">
+        <ui:Label text="CODIGO" name="PauseJoinCodeLabel" style="font-size: 40px; width: 391px; background-color: rgba(255, 255, 255, 0.498); display: flex; -unity-font-style: bold;"/>
         <ui:Button text="REANUDAR" name="ReanudarButton" class="ButtonStyle" style="top: 316px;"/>
         <ui:Button text="DESCONECTAR" name="DisconnectButton" class="ButtonStyle" style="top: 427px;"/>
     </ui:VisualElement>
