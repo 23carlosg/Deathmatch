@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5216fbd2958ed1f44bfe9ca6cf4e4c1b, type: 3}
   m_Name: MeteorSettings
   m_EditorClassIdentifier: Assembly-CSharp::MeteorSettings
-  maxAsteroidsCount: 2000
+  maxAsteroidsCount: 1000
