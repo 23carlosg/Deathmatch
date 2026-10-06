@@ -297,7 +297,7 @@ GameObject:
   - component: {fileID: 2307898093508865047}
   - component: {fileID: 7857074354651612751}
   - component: {fileID: 2315646246642243321}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: glass_panel_1 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
