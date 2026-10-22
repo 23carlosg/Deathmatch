@@ -1108,12 +1108,6 @@ MonoBehaviour:
   gravedad: 22
   coyoteTime: 0.15
   bufferSalto: 0.15
-  capasColisionCamara:
-    serializedVersion: 2
-    m_Bits: 640
-  radioColisionCamara: 0.25
-  margenPared: 0.1
-  distanciaMinimaCamara: 0.3
   alturaCamara: 1.6
   atrasCamara: 2.5
   ajusteDePies: -0.01
@@ -1121,6 +1115,16 @@ MonoBehaviour:
   desvioCamaraLibre: 0.6
   fovApuntado: 30
   suavizadoCamara: 10
+  capasColisionCamara:
+    serializedVersion: 2
+    m_Bits: 640
+  radioColisionCamara: 0.25
+  margenPared: 0.1
+  distanciaMinimaCamara: 0.3
+  distanciaOcultarCuerpo: 1
+  histeresisOcultar: 0.25
+  alphaCuerpoCerca: 0.35
+  velocidadFundido: 8
   danioRifle: 20
   retrocesoRifle: 0.5
   retrocesoRotacionRifle: 6
@@ -1130,7 +1134,9 @@ MonoBehaviour:
   retrocesoRotacionPistola: 6
   cadenciaPistola: 4
   bocaDelArma: {fileID: 0}
-  efectoDisparo: {fileID: 0}
+  bocaPistola: {fileID: 2747792463390018940}
+  bocaRifle: {fileID: 6343672551878361865}
+  efectoDisparo: {fileID: 9095786582126979589, guid: 1c05bbf79b54a794a81ae9efa6883d57, type: 3}
   efectoImpacto: {fileID: 0}
   alcance: 200
   dispersion: 1.5
@@ -1172,6 +1178,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cec4eab1e30bd4d4784e79fb6ee24b69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDetection
+--- !u!1 &2330306918595433097
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2747792463390018940}
+  m_Layer: 0
+  m_Name: BocaPistola
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2747792463390018940
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2330306918595433097}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.0001, y: 0.00568, z: 0.00956}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7517552854214224318}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2371543506884951027
 GameObject:
   m_ObjectHideFlags: 0
@@ -1491,7 +1528,8 @@ Transform:
   m_LocalPosition: {x: -0.009403319, y: 0.071051404, z: 0.021374986}
   m_LocalScale: {x: 0.6244843, y: 0.6244843, z: 0.6244843}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6343672551878361865}
   m_Father: {fileID: 2630524910949953021}
   m_LocalEulerAnglesHint: {x: -101.296, y: -122.436005, z: 229.631}
 --- !u!33 &4016293826423842656
@@ -2510,7 +2548,8 @@ Transform:
   m_LocalPosition: {x: 0.0648, y: 0.1833, z: 0.0054}
   m_LocalScale: {x: 22.684809, y: 22.684809, z: 22.684809}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2747792463390018940}
   m_Father: {fileID: 2630524910949953021}
   m_LocalEulerAnglesHint: {x: -84.969, y: 9.942, z: -259.4}
 --- !u!33 &6916523975122527771
@@ -3012,6 +3051,37 @@ Transform:
   - {fileID: 9053505554843673165}
   m_Father: {fileID: 3715914346995581716}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9150030247035544679
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6343672551878361865}
+  m_Layer: 0
+  m_Name: BocaRifle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6343672551878361865
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9150030247035544679}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.002, y: 0.172, z: 0.997}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4016293826424612672}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &7633512383775846972
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3020,6 +3090,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7068817249087182781}
     m_Modifications:
+    - target: {fileID: 176377143351918987, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1288426275945001905, guid: d68e7c18ae3234248b6af4148cda7976, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

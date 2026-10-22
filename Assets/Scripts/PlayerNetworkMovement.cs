@@ -60,6 +60,10 @@ public class PlayerNetworkMovement : NetworkBehaviour
 
     [Header("Disparo - General")]
     public Transform bocaDelArma;
+    [Tooltip("Punta del cañon de la pistola (objeto vacio hijo del arma). Si queda vacio se usa Boca Del Arma")]
+    public Transform bocaPistola;
+    [Tooltip("Punta del cañon del rifle (objeto vacio hijo del arma). Si queda vacio se usa Boca Del Arma")]
+    public Transform bocaRifle;
     public GameObject efectoDisparo;
     public GameObject efectoImpacto;
     public float alcance = 200f;
@@ -765,8 +769,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
 
         // efecto local inmediato en la boca del arma
         Vector3 posicionDeLaBoca = PuntoDeDisparo();
-        if (efectoDisparo != null)
-            Instantiate(efectoDisparo, posicionDeLaBoca, bocaDelArma != null ? bocaDelArma.rotation : Quaternion.identity);
+        CrearEfectoDisparo(posicionDeLaBoca, BocaActual());
 
         ReproducirDisparo();
 
@@ -787,10 +790,32 @@ public class PlayerNetworkMovement : NetworkBehaviour
         return false;
     }
 
+    // Boca del arma que tenes en la mano (cada arma puede tener la suya)
+    Transform BocaActual()
+    {
+        if (armaActual == 2 && bocaPistola != null) return bocaPistola;
+        if (armaActual == 1 && bocaRifle != null) return bocaRifle;
+        return bocaDelArma;
+    }
+
     Vector3 PuntoDeDisparo()
     {
-        if (bocaDelArma != null) return bocaDelArma.position;
+        Transform boca = BocaActual();
+        if (boca != null) return boca.position;
         return PuntoDelCuerpoEnMundo(new Vector3(0.25f, 1.35f, 0.7f));
+    }
+
+    // Crea el destello y lo destruye solo, aunque el prefab no tenga Stop Action en Destroy
+    // Si hay boca activa, el destello nace como hijo de ella y sigue al arma mientras te movés
+    void CrearEfectoDisparo(Vector3 posicion, Transform boca)
+    {
+        if (efectoDisparo == null) return;
+
+        GameObject fx = (boca != null && boca.gameObject.activeInHierarchy)
+            ? Instantiate(efectoDisparo, boca.position, boca.rotation, boca)
+            : Instantiate(efectoDisparo, posicion, Quaternion.identity);
+
+        Destroy(fx, 0.3f);
     }
 
     Vector3 PuntoDelCuerpoEnMundo(Vector3 puntoLocal)
@@ -857,8 +882,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
     {
         if (esLocal) return;
         recoilArma = 1f;
-        if (efectoDisparo != null)
-            Instantiate(efectoDisparo, posicionDeLaBoca, Quaternion.identity);
+        CrearEfectoDisparo(posicionDeLaBoca, BocaActual());
         ReproducirDisparo();
     }
 
