@@ -14,7 +14,7 @@ public class PlayerCamera : MonoBehaviour
 {
     public Transform jugador;            // cuerpo del jugador (se asigna solo al padre si esta vacio)
     public float sensibilidad = 2f;
-    public float limiteVertical = 80f;
+    public float limiteVertical = 60f;
     public float rotacionVertical;       // inclinacion actual (pitch)
 
     // Estado de muerte del dueño, escrito por PlayerNetworkMovement y consultado por la camara

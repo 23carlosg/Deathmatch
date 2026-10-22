@@ -1,8 +1,8 @@
 using UnityEngine;
-using System.Collections; // ��������� ��� ������������� IEnumerator
+using System.Collections;
+
 namespace Asteroids
 {
-
     public class AsteroidOrbitAndRotate : MonoBehaviour
     {
         [Tooltip("The target around which the rotation will occur.")]
@@ -12,22 +12,26 @@ namespace Asteroids
         public float orbitSpeed = 5f;
 
         [Tooltip("Minimum rotation speed around its own axis.")]
-        public float minRotationSpeed = 10f; 
+        public float minRotationSpeed = 10f;
 
         [Tooltip("Maximum rotation speed around its own axis.")]
-        public float maxRotationSpeed = 50f; 
+        public float maxRotationSpeed = 50f;
 
         [Tooltip("Whether to consider collisions or not.")]
-        public bool checkCollisions = false; 
+        public bool checkCollisions = false;
 
         [Tooltip("Range for random additional orbit speed.")]
-        public float additionalOrbitSpeedRange = 2f; 
+        public float additionalOrbitSpeedRange = 2f;
 
         [Tooltip("Dust Blust prefab.")]
         public GameObject dustBlustPrefab; // Dust Cloud prefab
+
+        // Carpeta compartida por todos los asteroides para guardar las nubes de polvo
+        private static Transform carpetaPolvo;
+
         private float radius;
-        private Vector3 rotationSpeed; 
-        private float currentAdditionalOrbitSpeed = 0f; 
+        private Vector3 rotationSpeed;
+        private float currentAdditionalOrbitSpeed = 0f;
 
         void Start()
         {
@@ -44,11 +48,11 @@ namespace Asteroids
             // additional speed for collisions
             if (checkCollisions)
             {
-                
                 currentAdditionalOrbitSpeed = Random.Range(-additionalOrbitSpeedRange, additionalOrbitSpeedRange);
             }
+
             Rigidbody rb = GetComponent<Rigidbody>();
-            
+
             if (rb != null)
             {
                 rb.useGravity = false;
@@ -69,10 +73,8 @@ namespace Asteroids
 
         void OnCollisionEnter(Collision other)
         {
-            
             if (checkCollisions && other.gameObject.CompareTag("Asteroid"))
             {
-                //Debug.Log("Collision Detected with " + other.gameObject.name);
                 Vector3 collisionPoint = other.contacts[0].point;
                 SpawnAndAnimateDustCloud(collisionPoint);
 
@@ -96,17 +98,14 @@ namespace Asteroids
 
             if (currentAdditionalOrbitSpeed < otherAsteroid.currentAdditionalOrbitSpeed)
             {
-               
                 otherRb.AddForce(pushDirection * sizeFactor * 3, ForceMode.Impulse);
                 otherAsteroid.currentAdditionalOrbitSpeed -= 1f;
 
-                
                 rb.AddForce(-pushDirection * sizeFactor * 2, ForceMode.Impulse);
                 currentAdditionalOrbitSpeed += 1f;
             }
             else
             {
-                
                 rb.AddForce(pushDirection * sizeFactor * 3, ForceMode.Impulse);
                 currentAdditionalOrbitSpeed -= 1f;
 
@@ -117,30 +116,42 @@ namespace Asteroids
 
         private void SpawnAndAnimateDustCloud(Vector3 position)
         {
-            //Debug.Log("SpawnAndAnimateDustCloud");
-            // Create collision animation
-            GameObject dustCloud = Instantiate(dustBlustPrefab, position, Quaternion.identity);
+            // Crear la carpeta una sola vez (o de nuevo si se destruyo al cambiar de escena)
+            if (carpetaPolvo == null)
+            {
+                carpetaPolvo = new GameObject("Polvo").transform;
+            }
+
+            // El ultimo parametro es el padre: la nube queda dentro de la carpeta "Polvo"
+            GameObject dustCloud = Instantiate(dustBlustPrefab, position, Quaternion.identity, carpetaPolvo);
             dustCloud.SetActive(true);
+
+            // Respaldo: si el asteroide se destruye antes de terminar la corrutina,
+            // la nube igual se elimina a los 7 segundos
+            Destroy(dustCloud, 7f);
+
             StartCoroutine(AnimateDustCloudSize(dustCloud));
         }
 
         private IEnumerator AnimateDustCloudSize(GameObject dustCloud)
         {
-            //Debug.Log("AnimateDustCloudSize");
             float targetSize = 17f;
             float currentTime = 0f;
             float duration = 7f; // Animation len
 
             while (currentTime < duration)
             {
+                // La nube puede haberse destruido por el respaldo o por un cambio de escena
+                if (dustCloud == null) yield break;
+
                 float scale = Mathf.Lerp(1f, targetSize, currentTime / duration);
                 dustCloud.transform.localScale = new Vector3(scale, scale, scale);
                 currentTime += Time.deltaTime;
                 yield return null;
             }
-            // Destroy cloud
-            Destroy(dustCloud);
-        }
 
+            // Destroy cloud
+            if (dustCloud != null) Destroy(dustCloud);
+        }
     }
 }

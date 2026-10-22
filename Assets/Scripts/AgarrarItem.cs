@@ -1,30 +1,71 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
 public class AgarrarItem : Interaccion
-{   
+{
     public ItemData itemData;
+    public float tiempoRespawn = 20f;
+
+    readonly NetworkVariable<bool> disponible = new NetworkVariable<bool>(true);
+
+    Renderer[] renderers;
+    Collider[] colliders;
+    Rigidbody rb;
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        renderers = GetComponentsInChildren<Renderer>(true);
+        colliders = GetComponentsInChildren<Collider>(true);
+        rb = GetComponent<Rigidbody>();
+
+        disponible.OnValueChanged += AlCambiarDisponible;
+        Aplicar(disponible.Value);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        disponible.OnValueChanged -= AlCambiarDisponible;
+        base.OnNetworkDespawn();
+    }
+
+    void AlCambiarDisponible(bool anterior, bool nuevo) => Aplicar(nuevo);
+
+    void Aplicar(bool visible)
+    {
+        foreach (var r in renderers) r.enabled = visible;
+        foreach (var c in colliders) c.enabled = visible;
+        // con el collider apagado, un Rigidbody caería atravesando el suelo
+        if (rb != null) rb.isKinematic = !visible;
+    }
 
     public override void Interactuar()
     {
+        if (!disponible.Value) return;
         base.Interactuar();
-
-        // El cliente le pide permiso al servidor para agarrar el item
         RequestPickupRpc();
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     void RequestPickupRpc(RpcParams rpcParams = default)
     {
-        // Esto corre solo en el servidor
+        // evita que dos jugadores lo agarren a la vez
+        if (!disponible.Value) return;
+
         ulong clienteId = rpcParams.Receive.SenderClientId;
         int itemId = ItemDataBase.Instance.GetId(itemData);
 
-        // Le devuelve el aviso solo al cliente que lo pidió
         AddItemToPickerRpc(itemId, RpcTarget.Single(clienteId, RpcTargetUse.Temp));
 
-        // Despawnea el objeto: desaparece para todos los jugadores
-        NetworkObject.Despawn(false);
+        disponible.Value = false;
+        StartCoroutine(Reaparecer());
+    }
+
+    IEnumerator Reaparecer()
+    {
+        yield return new WaitForSeconds(tiempoRespawn);
+        disponible.Value = true;
     }
 
     [Rpc(SendTo.SpecifiedInParams)]
@@ -37,10 +78,7 @@ public class AgarrarItem : Interaccion
         if (localPlayerObject == null) return;
 
         Hotbar hotbar = localPlayerObject.GetComponent<Hotbar>();
-        if (hotbar != null)
-        {
-            hotbar.AddItem(data);
-        }
+        if (hotbar != null) hotbar.AddItem(data);
 
         PlayerNetworkMovement jugador = localPlayerObject.GetComponent<PlayerNetworkMovement>();
         if (jugador != null)
@@ -56,14 +94,6 @@ public class AgarrarItem : Interaccion
                 jugador.CambiarArma(2);
             }
         }
-}
-
-    public override void OnNetworkDespawn()
-    {
-        base.OnNetworkDespawn();
-
-        // Al despawnearse, se desactiva visualmente y deja de poder detectarse
-        gameObject.SetActive(false);
     }
 }
 

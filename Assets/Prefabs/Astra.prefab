@@ -163,7 +163,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.05
   far clip plane: 1000
   field of view: 60
   orthographic: 0
@@ -1108,6 +1108,12 @@ MonoBehaviour:
   gravedad: 22
   coyoteTime: 0.15
   bufferSalto: 0.15
+  capasColisionCamara:
+    serializedVersion: 2
+    m_Bits: 640
+  radioColisionCamara: 0.25
+  margenPared: 0.1
+  distanciaMinimaCamara: 0.3
   alturaCamara: 1.6
   atrasCamara: 2.5
   ajusteDePies: -0.01

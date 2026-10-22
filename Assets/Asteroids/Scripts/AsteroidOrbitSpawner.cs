@@ -35,6 +35,9 @@ namespace Asteroids
         [Tooltip("Configuracion global del menu (cantidad de meteoritos elegida por el usuario).")]
         public MeteorSettings meteorSettings;
 
+        [Tooltip("Carpeta de la Hierarchy donde se guardan los asteroides (si queda vacia se crea sola). Debe tener escala 1 y rotacion 0.")]
+        public Transform carpetaAsteroides;
+
         private List<Vector4> asteroidPositionsAndSizes = new List<Vector4>(); // Posiciones (xyz) y tamanos (w)
 
         void Start()
@@ -63,6 +66,13 @@ namespace Asteroids
 
             if (verticalSpreadCurve == null || verticalSpreadCurve.length == 0)
                 verticalSpreadCurve = AnimationCurve.Constant(0f, 1f, 0.25f);
+
+            // Si no se asigno una carpeta, se crea una en la raiz de la escena
+            if (carpetaAsteroides == null)
+            {
+                GameObject carpeta = new GameObject("Asteroides");
+                carpetaAsteroides = carpeta.transform;
+            }
 
             SpawnAsteroids();
 
@@ -157,7 +167,9 @@ namespace Asteroids
 
         void SpawnAsteroid(Vector3 position, float size)
         {
-            GameObject asteroid = Instantiate(asteroidPrefab, position, Quaternion.identity);
+            // El ultimo parametro es el padre: el asteroide queda dentro de la carpeta.
+            // position sigue siendo de mundo con esta sobrecarga.
+            GameObject asteroid = Instantiate(asteroidPrefab, position, Quaternion.identity, carpetaAsteroides);
             asteroid.SetActive(true);
             asteroid.transform.localScale = new Vector3(size, size, size);
 
