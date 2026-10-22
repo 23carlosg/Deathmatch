@@ -38,7 +38,11 @@ namespace Asteroids
         [Tooltip("Carpeta de la Hierarchy donde se guardan los asteroides (si queda vacia se crea sola). Debe tener escala 1 y rotacion 0.")]
         public Transform carpetaAsteroides;
 
-        private List<Vector4> asteroidPositionsAndSizes = new List<Vector4>(); // Posiciones (xyz) y tamanos (w)
+        // Grilla espacial: cada celda guarda las posiciones (xyz) y tamanos (w) de los asteroides
+        // que caen en ella. Asi, comprobar si una posicion es valida solo mira a los vecinos
+        // cercanos en vez de comparar contra todos los asteroides ya creados.
+        private Dictionary<Vector3Int, List<Vector4>> grilla = new Dictionary<Vector3Int, List<Vector4>>();
+        private float tamanoCelda;
 
         void Start()
         {
@@ -73,6 +77,10 @@ namespace Asteroids
                 GameObject carpeta = new GameObject("Asteroides");
                 carpetaAsteroides = carpeta.transform;
             }
+
+            // Una celda mide lo maximo que puede valer la separacion entre dos asteroides:
+            // con eso alcanza revisar la celda propia y las 26 vecinas
+            tamanoCelda = Mathf.Max(0.01f, maxSize + spaceBetween);
 
             SpawnAsteroids();
 
@@ -133,8 +141,8 @@ namespace Asteroids
                             continue;
                         }
 
-                        // Guardar posicion y tamano
-                        asteroidPositionsAndSizes.Add(new Vector4(finalPosition.x, finalPosition.y, finalPosition.z, asteroidSize));
+                        // Guardar posicion y tamano en la grilla
+                        RegistrarPosicion(finalPosition, asteroidSize);
 
                         // Crear el asteroide
                         SpawnAsteroid(finalPosition, asteroidSize);
@@ -148,21 +156,50 @@ namespace Asteroids
             }
         }
 
-        // Comprueba que la nueva posicion no choque con otros asteroides
+        // Celda de la grilla a la que pertenece una posicion
+        Vector3Int Celda(Vector3 p)
+        {
+            return new Vector3Int(
+                Mathf.FloorToInt(p.x / tamanoCelda),
+                Mathf.FloorToInt(p.y / tamanoCelda),
+                Mathf.FloorToInt(p.z / tamanoCelda));
+        }
+
+        // Comprueba que la nueva posicion no choque con otros asteroides.
+        // Solo revisa la celda propia y las vecinas, no todos los asteroides.
         bool IsPositionValidWithSize(Vector3 newPosition, float newSize)
         {
-            foreach (var asteroidData in asteroidPositionsAndSizes)
-            {
-                Vector3 existingPosition = new Vector3(asteroidData.x, asteroidData.y, asteroidData.z);
-                float existingSize = asteroidData.w;
+            Vector3Int c = Celda(newPosition);
 
-                float distanceBetweenAsteroids = Vector3.Distance(newPosition, existingPosition);
-                if (distanceBetweenAsteroids < (existingSize / 2 + newSize / 2 + spaceBetween))
+            for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++)
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                if (!grilla.TryGetValue(c + new Vector3Int(dx, dy, dz), out List<Vector4> lista))
+                    continue;
+
+                foreach (Vector4 d in lista)
                 {
-                    return false;
+                    float distanceBetweenAsteroids = Vector3.Distance(newPosition, new Vector3(d.x, d.y, d.z));
+                    if (distanceBetweenAsteroids < (d.w / 2 + newSize / 2 + spaceBetween))
+                    {
+                        return false;
+                    }
                 }
             }
             return true;
+        }
+
+        // Guarda un asteroide en la celda que le corresponde
+        void RegistrarPosicion(Vector3 pos, float size)
+        {
+            Vector3Int c = Celda(pos);
+            if (!grilla.TryGetValue(c, out List<Vector4> lista))
+            {
+                lista = new List<Vector4>();
+                grilla[c] = lista;
+            }
+            lista.Add(new Vector4(pos.x, pos.y, pos.z, size));
         }
 
         void SpawnAsteroid(Vector3 position, float size)

@@ -66,6 +66,15 @@ public class PlayerNetworkMovement : NetworkBehaviour
     public Transform bocaRifle;
     public GameObject efectoDisparo;
     public GameObject efectoImpacto;
+
+    [Header("Disparo - Rayo laser")]
+    [Tooltip("Material con el shader Custom/LaserBeam. Si queda vacio no se dibuja rayo")]
+    public Material materialLaser;
+    public Color colorLaser = new Color(0.2f, 0.9f, 1f, 1f);
+    public float anchoLaser = 0.06f;
+    [Tooltip("Cuanto tarda en desvanecerse el rayo (segundos)")]
+    public float duracionLaser = 0.08f;
+
     public float alcance = 200f;
     public float dispersion = 1.5f;
 
@@ -771,10 +780,14 @@ public class PlayerNetworkMovement : NetworkBehaviour
         Vector3 posicionDeLaBoca = PuntoDeDisparo();
         CrearEfectoDisparo(posicionDeLaBoca, BocaActual());
 
+        // rayo laser: de la boca del arma al punto de impacto (o al maximo alcance)
+        Vector3 puntoFinal = acerto ? elegido.point : origen + direccion * alcance;
+        CrearLaser(posicionDeLaBoca, puntoFinal);
+
         ReproducirDisparo();
 
         // el instante de disparo viaja por red para reproducirse en el remoto sin retardo
-        DisparoEfectuadoClientRpc(posicionDeLaBoca);
+        DisparoEfectuadoClientRpc(posicionDeLaBoca, puntoFinal);
 
         // retroceso: el arma se inclina y vuelve; la vista se empuja hacia arriba
         // (rotacionVertical positivo inclina hacia abajo, por eso se resta)
@@ -878,12 +891,53 @@ public class PlayerNetworkMovement : NetworkBehaviour
 
     // Reproduce en las instancias remotas el instante de disparo del dueño.
     [Rpc(SendTo.ClientsAndHost)]
-    void DisparoEfectuadoClientRpc(Vector3 posicionDeLaBoca)
+    void DisparoEfectuadoClientRpc(Vector3 posicionDeLaBoca, Vector3 puntoFinal)
     {
         if (esLocal) return;
         recoilArma = 1f;
         CrearEfectoDisparo(posicionDeLaBoca, BocaActual());
+        CrearLaser(posicionDeLaBoca, puntoFinal);
         ReproducirDisparo();
+    }
+
+    // Dibuja el rayo como una linea que se afina y desvanece rapido
+    void CrearLaser(Vector3 desde, Vector3 hasta)
+    {
+        if (materialLaser == null) return;
+
+        GameObject go = new GameObject("Laser");
+        LineRenderer lr = go.AddComponent<LineRenderer>();
+        lr.material = materialLaser;
+        lr.useWorldSpace = true;
+        lr.positionCount = 2;
+        lr.SetPosition(0, desde);
+        lr.SetPosition(1, hasta);
+        lr.widthMultiplier = anchoLaser;
+        lr.textureMode = LineTextureMode.Stretch;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.receiveShadows = false;
+        lr.startColor = colorLaser;
+        lr.endColor = colorLaser;
+
+        Destroy(go, duracionLaser + 0.2f);   // respaldo por si la corrutina se corta
+        StartCoroutine(DesvanecerLaser(lr));
+    }
+
+    IEnumerator DesvanecerLaser(LineRenderer lr)
+    {
+        float t = 0f;
+        while (t < duracionLaser && lr != null)
+        {
+            float k = 1f - t / duracionLaser;
+            Color c = colorLaser;
+            c.a = colorLaser.a * k;
+            lr.startColor = c;
+            lr.endColor = c;
+            lr.widthMultiplier = anchoLaser * k;
+            t += Time.deltaTime;
+            yield return null;
+        }
+        if (lr != null) Destroy(lr.gameObject);
     }
 
     // Sonido de disparo en audio 3D: cada maquina lo reproduce una sola vez (el dueño en

@@ -1138,6 +1138,10 @@ MonoBehaviour:
   bocaRifle: {fileID: 6343672551878361865}
   efectoDisparo: {fileID: 9095786582126979589, guid: 1c05bbf79b54a794a81ae9efa6883d57, type: 3}
   efectoImpacto: {fileID: 0}
+  materialLaser: {fileID: 2100000, guid: 932dd924d267de14e827e0f97286e8f8, type: 2}
+  colorLaser: {r: 0.2, g: 0.9, b: 1, a: 1}
+  anchoLaser: 0.06
+  duracionLaser: 0.08
   alcance: 200
   dispersion: 1.5
   sonidoDisparo: {fileID: 8300000, guid: 227ad2ea2053e7b45bffd55b6b2824af, type: 3}
