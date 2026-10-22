@@ -25,6 +25,7 @@ public class MainMenuUI : MonoBehaviour
     private Button iniciarHostButton;
     private Button iniciarClienteButton;
     private TextField joinCodeInput;
+    private TextField playerNameInput;
 
     private NetworkLobbyManager Lobby => NetworkLobbyManager.Instancia;
 
@@ -58,10 +59,8 @@ public class MainMenuUI : MonoBehaviour
 
         if (asteroideDropdown != null && meteorSettings != null)
         {
-            // Poner como seleccionado el valor actual guardado
             asteroideDropdown.value = meteorSettings.maxAsteroidsCount.ToString();
 
-            // Escuchar cambios
             asteroideDropdown.RegisterValueChangedCallback(evt =>
             {
                 meteorSettings.maxAsteroidsCount = int.Parse(evt.newValue);
@@ -71,6 +70,8 @@ public class MainMenuUI : MonoBehaviour
 
         // Inputs de lobby
         joinCodeInput = root.Q<TextField>("JoinCodeInput");
+        playerNameInput = root.Q<TextField>("PlayerNameInput");
+        if (playerNameInput != null) playerNameInput.maxLength = 16;
 
         // Volumen
         volumeSlider = root.Q<Slider>("VolumeSlider");
@@ -133,6 +134,19 @@ public class MainMenuUI : MonoBehaviour
             panelRenderer.UnregisterUIReloadCallback(OnUIReload);
     }
 
+    // Devuelve el nombre escrito, o null si está vacío
+    private string LeerNombre()
+    {
+        string n = playerNameInput != null ? playerNameInput.value.Trim() : "";
+        if (string.IsNullOrEmpty(n))
+        {
+            if (playerNameInput != null)
+                playerNameInput.textEdition.placeholder = "Escribí tu nombre primero";
+            return null;
+        }
+        return n;
+    }
+
     // ------------------ LOBBY ---------------------
 
     private async void IniciarServidor()
@@ -142,9 +156,13 @@ public class MainMenuUI : MonoBehaviour
             Debug.LogWarning("Error interno: no hay NetworkLobbyManager");
             return;
         }
+
+        string nombre = LeerNombre();
+        if (nombre == null) return;
+
         if (iniciarHostButton != null) iniciarHostButton.SetEnabled(false);
         iniciarClienteButton.pickingMode = PickingMode.Ignore;
-        string joinCode = await Lobby.IniciarHost();
+        string joinCode = await Lobby.IniciarHost(nombre);
 
         if (string.IsNullOrEmpty(joinCode))
         {
@@ -170,11 +188,13 @@ public class MainMenuUI : MonoBehaviour
             return;
         }
 
-        // Deshabilitar el botón 3 segundos desde el clic
+        string nombre = LeerNombre();
+        if (nombre == null) return;
+
         if (iniciarClienteButton != null) iniciarClienteButton.SetEnabled(false);
         var espera = System.Threading.Tasks.Task.Delay(3000);
 
-        bool ok = await Lobby.IniciarCliente(codigo);
+        bool ok = await Lobby.IniciarCliente(codigo, nombre);
 
         if (!ok)
         {
@@ -186,7 +206,6 @@ public class MainMenuUI : MonoBehaviour
         {
             if (LobbyRoomUI.Instance != null) LobbyRoomUI.Instance.Abrir();
         }
-        // Esperar lo que falte para completar los 3 segundos
         await espera;
 
         if (iniciarClienteButton != null) iniciarClienteButton.SetEnabled(true);

@@ -5,11 +5,13 @@ using Unity.Services.Authentication;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Text;
 
 public class NetworkLobbyManager : MonoBehaviour
 {
-    [SerializeField] private GameObject lobbyRoomStatePrefab;
     [SerializeField] private string escenaDeJuego = "Arena";
+    [SerializeField] private GameObject lobbyRoomStatePrefab;
 
     [Header("Puntos de spawn (coordenadas del mapa)")]
     [SerializeField]
@@ -33,6 +35,24 @@ public class NetworkLobbyManager : MonoBehaviour
     Vector3[] ordenSpawnBarajado;
 
     public static string JoinCodeActual { get; private set; } = "";
+
+    // ---------------- NOMBRES ----------------
+    public static string NombreLocal { get; private set; } = "";
+    static readonly Dictionary<ulong, string> nombres = new Dictionary<ulong, string>();
+
+    public static string LimpiarNombre(string n)
+    {
+        if (string.IsNullOrWhiteSpace(n)) return "";
+        n = n.Trim();
+        return n.Length > 16 ? n.Substring(0, 16) : n;
+    }
+
+    // Lo usan LobbyRoomState y ScoreboardState (corren en el servidor)
+    public static string ObtenerNombre(ulong id)
+    {
+        if (nombres.TryGetValue(id, out var n) && !string.IsNullOrEmpty(n)) return n;
+        return "Jugador " + id;
+    }
 
     // Player no se mueve para no caer antes de que exista el piso
     public static bool MapaListo { get; private set; } = false;
@@ -91,21 +111,18 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
-    // Se llama cuando termina de cargar una escena (en el host y en los clientes)
     void AlTerminarDeCargarEscena(string nombreEscena, UnityEngine.SceneManagement.LoadSceneMode modo,
-        System.Collections.Generic.List<ulong> clientesCompletados, System.Collections.Generic.List<ulong> clientesConTimeout)
+        List<ulong> clientesCompletados, List<ulong> clientesConTimeout)
     {
         if (nombreEscena != escenaDeJuego) return;
 
         MapaListo = true;
 
-        // Solo el host/servidor crea los jugadores
         var nm = NetworkManager.Singleton;
         if (nm == null || !nm.IsServer) return;
         CrearJugadoresFaltantes(nm);
     }
 
-    // Crea el jugador de cada cliente conectado que todavía no tenga uno
     void CrearJugadoresFaltantes(NetworkManager nm)
     {
         GameObject prefab = nm.NetworkConfig.PlayerPrefab;
@@ -146,8 +163,12 @@ public class NetworkLobbyManager : MonoBehaviour
 
     void AprobarConexion(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-        // En la sala de espera (escena Menu) NO se crea el jugador.
-        // Si alguien entra con la partida ya empezada, sí se crea.
+        // Leer el nombre que mandó el jugador al conectarse
+        string nombreRecibido = (request.Payload != null && request.Payload.Length > 0)
+            ? LimpiarNombre(Encoding.UTF8.GetString(request.Payload)) : "";
+        if (!string.IsNullOrEmpty(nombreRecibido))
+            nombres[request.ClientNetworkId] = nombreRecibido;
+
         response.Approved = true;
         response.CreatePlayerObject = EscenaDeJuegoActiva;
         response.Position = SiguientePosicionDeSpawn();
@@ -194,7 +215,6 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
-    // Espera a que se termine de cerrar una conexión anterior
     async Task EsperarCierreDeRed()
     {
         var nm = NetworkManager.Singleton;
@@ -209,10 +229,13 @@ public class NetworkLobbyManager : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    // HOST: crea asignacion en Relay y arranca el host (NO carga Arena)
+    // HOST
     // ---------------------------------------------------------------
-    public async Task<string> IniciarHost()
+    public async Task<string> IniciarHost(string nombre)
     {
+        NombreLocal = LimpiarNombre(nombre);
+        nombres.Clear();
+
         ValidarPuntos();
         BarajarPuntosDeSpawn();
         siguienteSpawn = 0;
@@ -225,7 +248,6 @@ public class NetworkLobbyManager : MonoBehaviour
 
             await InicializarServicios();
 
-            // 7 clientes + 1 host = 8 jugadores max
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(7);
 
             JoinCodeActual = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
@@ -237,19 +259,20 @@ public class NetworkLobbyManager : MonoBehaviour
             var relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
             transporte.SetRelayServerData(relayServerData);
 
+            // El nombre viaja en los datos de conexión
+            NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(NombreLocal);
+
             if (NetworkManager.Singleton.StartHost())
             {
+                nombres[NetworkManager.ServerClientId] = NombreLocal;
+
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= AlTerminarDeCargarEscena;
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += AlTerminarDeCargarEscena;
 
-                Debug.Log("[Lobby] Host iniciado. Prefab sala asignado: " + (lobbyRoomStatePrefab != null));
-
-                // Crear el estado de la sala por código
                 if (lobbyRoomStatePrefab != null)
                 {
                     var sala = Instantiate(lobbyRoomStatePrefab);
                     sala.GetComponent<NetworkObject>().Spawn();
-                    Debug.Log("[Lobby] LobbyRoomState creado y spawneado.");
                 }
                 else
                 {
@@ -271,7 +294,7 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
-    // Lo llama el botón INICIAR PARTIDA de la sala de espera (solo el host)
+    // Lo llama el botón INICIAR PARTIDA (solo el host)
     public void IniciarPartida()
     {
         var nm = NetworkManager.Singleton;
@@ -280,10 +303,11 @@ public class NetworkLobbyManager : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    // CLIENTE: se conecta con el Join Code
+    // CLIENTE
     // ---------------------------------------------------------------
-    public async Task<bool> IniciarCliente(string joinCode)
+    public async Task<bool> IniciarCliente(string joinCode, string nombre)
     {
+        NombreLocal = LimpiarNombre(nombre);
         JoinCodeActual = "";
         ValidarPuntos();
 
@@ -302,6 +326,9 @@ public class NetworkLobbyManager : MonoBehaviour
             var relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
             transporte.SetRelayServerData(relayServerData);
 
+            // El nombre viaja en los datos de conexión
+            NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(NombreLocal);
+
             if (NetworkManager.Singleton.StartClient())
             {
                 JoinCodeActual = joinCode;
@@ -309,11 +336,10 @@ public class NetworkLobbyManager : MonoBehaviour
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += AlTerminarDeCargarEscena;
 
                 // Si el cliente ya tiene cargada una escena (Menu, ArenaFondo), no la recarga.
-                // La escena de juego (Arena) sí se carga siempre.
-                NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = (indice, nombre, modo) =>
+                NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = (indice, nombreEscena, modo) =>
                 {
-                    var escena = UnityEngine.SceneManagement.SceneManager.GetSceneByName(nombre);
-                    if (escena.isLoaded && nombre != escenaDeJuego) return false;
+                    var escena = UnityEngine.SceneManagement.SceneManager.GetSceneByName(nombreEscena);
+                    if (escena.isLoaded && nombreEscena != escenaDeJuego) return false;
                     return true;
                 };
                 return true;

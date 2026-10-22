@@ -38,7 +38,7 @@ public class LobbyRoomState : NetworkBehaviour
         for (int i = 0; i < Players.Count; i++)
             if (Players[i].ClientId == id) return;
 
-        Players.Add(new PlayerEntry { ClientId = id, Name = "Jugador " + id, Score = 0, Deaths = 0 });
+        Players.Add(new PlayerEntry { ClientId = id, Name = NetworkLobbyManager.ObtenerNombre(id), Score = 0, Deaths = 0 });
     }
 
     void QuitarJugador(ulong id)

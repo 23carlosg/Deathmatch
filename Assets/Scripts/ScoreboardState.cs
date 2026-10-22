@@ -66,8 +66,8 @@ public class ScoreboardState : NetworkBehaviour
         Players.Add(new PlayerEntry
         {
             ClientId = clientId,
-            Name = "Jugador " + clientId,
-            //Name = NetworkLobbyManager.ObtenerNombre(clientId),
+            //Name = "Jugador " + clientId,
+            Name = NetworkLobbyManager.ObtenerNombre(clientId),
             Score = 0,
             Deaths = 0
         });

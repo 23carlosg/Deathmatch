@@ -13,7 +13,6 @@ public class LobbyRoomUI : MonoBehaviour
     private ScrollView list;
     private Button copyButton, startButton, leaveButton;
     private bool Visible => panel != null && panel.style.display == DisplayStyle.Flex;
-    private string ultimoEstado = "";
     private float proximoRefresco;
 
     void Awake()
@@ -120,7 +119,6 @@ public class LobbyRoomUI : MonoBehaviour
         $"spawned={(LobbyRoomState.Instance != null && LobbyRoomState.Instance.IsSpawned)} " +
         $"count={(LobbyRoomState.Instance != null ? LobbyRoomState.Instance.Players.Count : -1)} " +
         $"esHost={nm.IsServer}";
-        if (estado != ultimoEstado) { ultimoEstado = estado; Debug.Log(estado); }
         if (LobbyRoomState.Instance == null) return;
 
         var jugadores = LobbyRoomState.Instance.Players;
