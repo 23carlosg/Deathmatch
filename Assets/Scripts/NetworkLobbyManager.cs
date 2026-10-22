@@ -294,11 +294,15 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
-    // Lo llama el botón INICIAR PARTIDA (solo el host)
+    // Lo llama el boton INICIAR PARTIDA (solo el host)
     public void IniciarPartida()
     {
         var nm = NetworkManager.Singleton;
         if (nm == null || !nm.IsServer) return;
+
+        // Solo se inicia si todos los clientes estan listos
+        if (LobbyRoomState.Instance != null && !LobbyRoomState.Instance.TodosListos()) return;
+
         nm.SceneManager.LoadScene(escenaDeJuego, UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 

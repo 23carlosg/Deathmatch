@@ -21,3 +21,6 @@
 .room-name { flex-grow: 1; color: white; font-size: 18px; }
 .room-tag { color: #ffd84a; font-size: 14px; -unity-text-align: middle-right; }
 .room-local .room-name { color: #ffd84a; }
+.room-ready { background-color: rgb(60, 90, 160); color: white; }
+.room-ready-on { background-color: rgb(40, 140, 70); color: white; }
+.room-listo { color: #5cff8a; font-size: 14px; -unity-text-align: middle-right; -unity-font-style: bold; }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,8 +10,8 @@ public class LobbyRoomUI : MonoBehaviour
     private VisualElement root, panel, mainLobbyPanel;
     private Label codeLabel, countLabel, waitingLabel;
     private ScrollView list;
-    private Button copyButton, startButton, leaveButton;
-    private bool Visible => panel != null && panel.style.display == DisplayStyle.Flex;
+    private Button copyButton, startButton, leaveButton, readyButton;
+
     private float proximoRefresco;
 
     void Awake()
@@ -40,10 +39,18 @@ public class LobbyRoomUI : MonoBehaviour
         copyButton = root.Q<Button>("CopyCodeButton");
         startButton = root.Q<Button>("StartGameButton");
         leaveButton = root.Q<Button>("LeaveRoomButton");
+        readyButton = root.Q<Button>("ReadyButton");
+
+        if (panel == null)
+        {
+            Debug.LogError("LobbyRoomUI: no encontré WaitingRoomPanel en el UXML.");
+            return;
+        }
 
         if (copyButton != null)  { copyButton.clicked -= CopiarCodigo;    copyButton.clicked += CopiarCodigo; }
         if (startButton != null) { startButton.clicked -= IniciarPartida; startButton.clicked += IniciarPartida; }
         if (leaveButton != null) { leaveButton.clicked -= Salir;          leaveButton.clicked += Salir; }
+        if (readyButton != null) { readyButton.clicked -= AlternarListo;  readyButton.clicked += AlternarListo; }
 
         panel.style.display = DisplayStyle.None;
 
@@ -52,6 +59,9 @@ public class LobbyRoomUI : MonoBehaviour
         if (nm != null && nm.IsListening) Abrir();
     }
 
+    private bool Visible => panel != null && panel.style.display == DisplayStyle.Flex;
+
+    // Lo llama MainMenuUI cuando creás o te unís a una sala
     public void Abrir()
     {
         if (panel == null) return;
@@ -69,7 +79,6 @@ public class LobbyRoomUI : MonoBehaviour
         if (panel != null) panel.style.display = DisplayStyle.None;
         if (mainLobbyPanel != null) mainLobbyPanel.style.display = DisplayStyle.Flex;
 
-        // Rehabilitar los botones del lobby
         var host = root?.Q<Button>("IniciarHostButton");
         var cliente = root?.Q<Button>("IniciarClienteButton");
         if (host != null) host.SetEnabled(true);
@@ -80,7 +89,6 @@ public class LobbyRoomUI : MonoBehaviour
     {
         if (!Visible) return;
 
-        // Si se cae la conexión, se vuelve al lobby
         var nm = NetworkManager.Singleton;
         if (nm == null || !nm.IsListening)
         {
@@ -90,7 +98,7 @@ public class LobbyRoomUI : MonoBehaviour
 
         if (Time.unscaledTime >= proximoRefresco)
         {
-            proximoRefresco = Time.unscaledTime + 0.5f;
+            proximoRefresco = Time.unscaledTime + 0.25f;
             Refrescar();
         }
     }
@@ -103,34 +111,35 @@ public class LobbyRoomUI : MonoBehaviour
         bool esHost = nm.IsServer;
 
         // El código solo lo ve el anfitrión
-        string codigo = (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer) ? NetworkLobbyManager.JoinCodeActual : "";
+        string codigo = NetworkLobbyManager.JoinCodeActual;
         bool mostrarCodigo = esHost && !string.IsNullOrEmpty(codigo);
         codeLabel.text = mostrarCodigo ? "Código: " + codigo : "";
         codeLabel.style.display = mostrarCodigo ? DisplayStyle.Flex : DisplayStyle.None;
         copyButton.style.display = mostrarCodigo ? DisplayStyle.Flex : DisplayStyle.None;
 
-        // Solo el anfitrión ve el botón de iniciar
+        // Botones según el rol
         startButton.style.display = esHost ? DisplayStyle.Flex : DisplayStyle.None;
-        waitingLabel.style.display = esHost ? DisplayStyle.None : DisplayStyle.Flex;
+        readyButton.style.display = esHost ? DisplayStyle.None : DisplayStyle.Flex;
+        waitingLabel.style.display = DisplayStyle.Flex;
 
-        // Lista de jugadores
         list.Clear();
-        string estado = $"[Sala] Instance={(LobbyRoomState.Instance != null)} " +
-        $"spawned={(LobbyRoomState.Instance != null && LobbyRoomState.Instance.IsSpawned)} " +
-        $"count={(LobbyRoomState.Instance != null ? LobbyRoomState.Instance.Players.Count : -1)} " +
-        $"esHost={nm.IsServer}";
-        if (LobbyRoomState.Instance == null) return;
+        var estado = LobbyRoomState.Instance;
+        if (estado == null) return;
 
-        var jugadores = LobbyRoomState.Instance.Players;
+        var jugadores = estado.Players;
         countLabel.text = "Jugadores: " + jugadores.Count;
+
+        bool yoListo = false;
 
         for (int i = 0; i < jugadores.Count; i++)
         {
             PlayerEntry p = jugadores[i];
+            bool esLocal = p.ClientId == nm.LocalClientId;
+            if (esLocal) yoListo = p.Listo;
 
             var fila = new VisualElement();
             fila.AddToClassList("room-row");
-            if (p.ClientId == nm.LocalClientId) fila.AddToClassList("room-local");
+            if (esLocal) fila.AddToClassList("room-local");
 
             var nombre = new Label(p.Name.ToString());
             nombre.AddToClassList("room-name");
@@ -138,13 +147,43 @@ public class LobbyRoomUI : MonoBehaviour
 
             if (p.ClientId == NetworkManager.ServerClientId)
             {
-                var tag = new Label("Anfitrion");
+                var tag = new Label("Anfitrión");
                 tag.AddToClassList("room-tag");
+                fila.Add(tag);
+            }
+            else if (p.Listo)
+            {
+                var tag = new Label("Listo");
+                tag.AddToClassList("room-listo");
                 fila.Add(tag);
             }
 
             list.Add(fila);
         }
+
+        if (esHost)
+        {
+            bool todos = estado.TodosListos();
+            startButton.SetEnabled(todos);
+            waitingLabel.text = estado.CantidadClientes() == 0
+                ? "Esperando jugadores..."
+                : $"Listos: {estado.CantidadListos()}/{estado.CantidadClientes()}";
+        }
+        else
+        {
+            waitingLabel.text = yoListo
+                ? "Esperando que el anfitrión inicie la partida..."
+                : "Apretá LISTO cuando estés preparado.";
+
+            readyButton.text = yoListo ? "CANCELAR LISTO" : "LISTO";
+            readyButton.EnableInClassList("room-ready-on", yoListo);
+            readyButton.EnableInClassList("room-ready", !yoListo);
+        }
+    }
+
+    private void AlternarListo()
+    {
+        if (LobbyRoomState.Instance != null) LobbyRoomState.Instance.AlternarListo();
     }
 
     private void CopiarCodigo()

@@ -9,6 +9,7 @@ public struct PlayerEntry : INetworkSerializable, IEquatable<PlayerEntry>
     public FixedString64Bytes Name;
     public int Score;   // kills del jugador
     public int Deaths;  // veces que murió
+    public bool Listo;  // listo en la sala de espera
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
@@ -16,12 +17,13 @@ public struct PlayerEntry : INetworkSerializable, IEquatable<PlayerEntry>
         serializer.SerializeValue(ref Name);
         serializer.SerializeValue(ref Score);
         serializer.SerializeValue(ref Deaths);
+        serializer.SerializeValue(ref Listo);
     }
 
     public bool Equals(PlayerEntry other)
     {
         return ClientId == other.ClientId && Name == other.Name
-            && Score == other.Score && Deaths == other.Deaths;
+            && Score == other.Score && Deaths == other.Deaths && Listo == other.Listo;
     }
 }
 

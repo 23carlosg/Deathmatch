@@ -15,7 +15,7 @@
         <ui:Button text="ATRAS" name="BackButton" class="ButtonStyle" style="top: 515px; bottom: auto;"/>
         <ui:DropdownField label="ASTEROIDES" choices="0,100,500,1000,2500" index="0" name="AsteroideSetting" style="text-shadow: 0 0 0 rgb(0, 0, 0); color: rgb(255, 255, 255); font-size: 50px; height: 82px; width: 550px; left: 704px; top: 188px;"/>
     </ui:VisualElement>
-    <ui:VisualElement name="MainLobbyPanel" enabled="true" style="flex-grow: 1; background-image: none; display: flex;">
+    <ui:VisualElement name="MainLobbyPanel" enabled="true" style="flex-grow: 1; background-image: none; display: none;">
         <ui:TextField label="" placeholder-text="Ingrese su nombre" name="PlayerNameInput" max-length="16" style="top: 323px; align-self: center; width: 570px; margin-left: 0; background-color: rgb(27, 27, 27); -unity-background-image-tint-color: rgb(255, 255, 255); border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; color: rgb(0, 0, 0); font-size: 35px; -unity-text-outline-color: rgb(255, 255, 255); overflow: visible; margin-top: -135px; align-content: auto; margin-right: 0; margin-bottom: 0;"/>
         <ui:Button text="INICIAR HOST" name="IniciarHostButton" selectable="false" focusable="false" enabled="true" class="ButtonStyle" style="top: 400px; left: auto;"/>
         <ui:Button text="INICIAR CLIENTE" name="IniciarClienteButton" focusable="true" class="ButtonStyle" style="top: 570px; left: auto; visibility: visible; display: flex;"/>
@@ -44,6 +44,7 @@
         <ui:ScrollView name="RoomPlayerList" class="room-list"/>
         <ui:Label text="Esperando que el anfitrión inicie la partida..." name="RoomWaitingLabel" class="room-waiting"/>
         <ui:Button text="INICIAR PARTIDA" name="StartGameButton" class="room-btn room-start"/>
+        <ui:Button text="LISTO" name="ReadyButton" class="room-btn room-ready"/>
         <ui:Button text="Salir" name="LeaveRoomButton" class="room-btn"/>
     </ui:VisualElement>
 </ui:UXML>
