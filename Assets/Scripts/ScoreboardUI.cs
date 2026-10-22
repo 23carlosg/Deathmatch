@@ -135,8 +135,12 @@ public class ScoreboardUI : MonoBehaviour
             var puntaje = new Label(p.Score.ToString());
             puntaje.AddToClassList("sb-score");
 
+            var muertes = new Label(p.Deaths.ToString());
+            muertes.AddToClassList("sb-score");
+
             fila.Add(nombre);
             fila.Add(puntaje);
+            fila.Add(muertes);
             list.Add(fila);
         }
     }

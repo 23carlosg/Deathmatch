@@ -206,16 +206,38 @@ public class PlayerNetworkMovement : NetworkBehaviour
 
         if (Muerto) return;
 
-        LeerCambioDeArma();
-        LeerApuntar();
-        Recargar();
+        bool libre = PlayerCamera.CamaraLibre;
 
-        Mover();
-        Animar();
-        Disparar();
+        if (!libre)
+        {
+            LeerCambioDeArma();
+            LeerApuntar();
+            Recargar();
+        }
+        else apuntando = false;
+
+        Mover();      // dentro ignora el input si la camara es libre, pero sigue aplicando gravedad
+        Animar();     // sigue corriendo para que el personaje frene y caiga con animacion normal
+
+        if (!libre)
+        {
+            Disparar();     // si no, el rayo saldria desde la camara libre
+            MoverCamara();  // si no, pelearia con la posicion de la camara libre (ya desparentada)
+        }
+
         AplicarRecoilDelArma();
-        MoverCamara();
         ActualizarMira();
+        ActualizarMiraSegunCamaraLibre();
+    }
+
+    bool camaraLibreAnterior;
+
+    void ActualizarMiraSegunCamaraLibre()
+    {
+        bool libre = PlayerCamera.CamaraLibre;
+        if (libre == camaraLibreAnterior) return;
+        camaraLibreAnterior = libre;
+        if (mira != null && !Muerto) mira.Mostrar(!libre);
     }
 
     // ------------------------- SEPARACIÓN CON BOTS -------------------------
@@ -385,19 +407,23 @@ public class PlayerNetworkMovement : NetworkBehaviour
     void Mover()
     {
         bool enSuelo = controller.isGrounded;
+        bool libre = PlayerCamera.CamaraLibre;
 
         coyoteTimer = enSuelo ? coyoteTime : coyoteTimer - Time.deltaTime;
-        if (Keyboard.current.spaceKey.wasPressedThisFrame) bufferSaltoTimer = bufferSalto;
+        if (!libre && Keyboard.current.spaceKey.wasPressedThisFrame) bufferSaltoTimer = bufferSalto;
         else bufferSaltoTimer -= Time.deltaTime;
 
         float x = 0f, z = 0f;
-        if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) x -= 1f;
-        if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) x += 1f;
-        if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) z -= 1f;
-        if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) z += 1f;
+        if (!libre)
+        {
+            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) x -= 1f;
+            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) x += 1f;
+            if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) z -= 1f;
+            if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) z += 1f;
+        }
         Vector2 entrada = Vector2.ClampMagnitude(new Vector2(x, z), 1f);
 
-        corriendo = Keyboard.current.leftShiftKey.isPressed;
+        corriendo = !libre && Keyboard.current.leftShiftKey.isPressed;
         float velocidadObjetivo = corriendo ? velocidadCorrer : velocidadCaminar;
         Vector3 deseada = transform.TransformDirection(new Vector3(entrada.x, 0f, entrada.y)) * velocidadObjetivo;
 
@@ -614,26 +640,31 @@ void Disparar()
     // El cliente que dispara le avisa al SERVIDOR a quien golpeo; el servidor baja la salud
     // de la victima (autoridad del servidor: un cliente no puede escribir la salud de nadie)
     [ServerRpc]
-    void DanioAJugadorServerRpc(float danio, ulong clientIdVictima)
+    void DanioAJugadorServerRpc(float danio, ulong clientIdVictima, ServerRpcParams rpcParams = default)
     {
+        ulong atacanteId = rpcParams.Receive.SenderClientId;
+
         if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientIdVictima, out var cliente)
             && cliente.PlayerObject != null)
         {
             PlayerNetworkMovement victima = cliente.PlayerObject.GetComponent<PlayerNetworkMovement>();
-            if (victima != null) victima.RecibirDanioEnServidor(danio);
+            if (victima != null) victima.RecibirDanioEnServidor(danio, atacanteId);
         }
     }
 
     // Corre SOLO en el servidor: la salud vive en una NetworkVariable de escritura del servidor
-    void RecibirDanioEnServidor(float cantidad)
+    void RecibirDanioEnServidor(float cantidad, ulong atacanteId)
     {
-        if (Muerto) return;
+        if (Muerto || redSalud.Value <= 0f) return;
         redSalud.Value = Mathf.Max(0f, redSalud.Value - cantidad);
 
-        // Si esto lo mató, arranca el temporizador de revivir automático (solo una vez)
         if (redSalud.Value <= 0f && !reviviendoAutomaticamente)
         {
             reviviendoAutomaticamente = true;
+
+            if (ScoreboardState.Instance != null)
+                ScoreboardState.Instance.RegistrarKill(atacanteId, OwnerClientId);
+
             StartCoroutine(RevivirAutomaticamenteCoroutine());
         }
     }
@@ -682,9 +713,11 @@ void Disparar()
     }
 
     [ServerRpc]
-    void RecibirDanioServerRpc(float cantidad)
+    void RecibirDanioServerRpc(float cantidad, ServerRpcParams rpcParams = default)
     {
-        RecibirDanioEnServidor(cantidad);
+        // Sin atacante conocido; se usa el propio id
+        // (RegistrarKill ignora suicidios)
+        RecibirDanioEnServidor(cantidad, OwnerClientId);
     }
 
     // ------------------------- SALUD / MUERTE -------------------------
