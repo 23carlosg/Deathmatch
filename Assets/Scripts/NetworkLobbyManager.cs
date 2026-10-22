@@ -8,13 +8,14 @@ using System.Threading.Tasks;
 
 public class NetworkLobbyManager : MonoBehaviour
 {
+    [SerializeField] private GameObject lobbyRoomStatePrefab;
     [SerializeField] private string escenaDeJuego = "Arena";
 
     [Header("Puntos de spawn (coordenadas del mapa)")]
     [SerializeField]
     private Vector3[] puntosDeSpawn = new Vector3[]
     {
-        new Vector3(-134.085f, 1f, 106.480f), //Coordenadas de los puntos de spawn en el mapa
+        new Vector3(-134.085f, 1f, 106.480f),
         new Vector3(-134.085f, 1f, 140f),
         new Vector3(-134.085f, 1f, 174.480f),
         new Vector3(-58.085f, 1f, 106.480f),
@@ -25,13 +26,13 @@ public class NetworkLobbyManager : MonoBehaviour
     };
 
     [Header("Validacion (bounds del piso del mapa)")]
-    [SerializeField] private Vector3 minPiso = new Vector3(-136f, -1f, 100f); // Coordenadas del piso del mapa
+    [SerializeField] private Vector3 minPiso = new Vector3(-136f, -1f, 100f);
     [SerializeField] private Vector3 maxPiso = new Vector3(-56f, 5f, 180f);
 
     int siguienteSpawn = 0;
     Vector3[] ordenSpawnBarajado;
 
-    public static string JoinCodeActual { get; private set; } = ""; 
+    public static string JoinCodeActual { get; private set; } = "";
 
     // Player no se mueve para no caer antes de que exista el piso
     public static bool MapaListo { get; private set; } = false;
@@ -54,19 +55,16 @@ public class NetworkLobbyManager : MonoBehaviour
 
     void Awake()
     {
-        if (instancia == null) 
+        if (instancia == null)
         {
             instancia = this;
-            DontDestroyOnLoad(gameObject); 
+            DontDestroyOnLoad(gameObject);
         }
         else if (instancia != this)
         {
             var nmDuplicado = GetComponent<NetworkManager>();
-            if (nmDuplicado == null) 
-            {
+            if (nmDuplicado == null)
                 nmDuplicado = FindAnyObjectByType<NetworkManager>();
-            }
-            // Si hay un NetworkManager duplicado, lo destruye para evitar conflictos
             if (nmDuplicado != null && nmDuplicado != NetworkManager.Singleton)
                 Destroy(nmDuplicado.gameObject);
             Destroy(gameObject);
@@ -77,9 +75,9 @@ public class NetworkLobbyManager : MonoBehaviour
     {
         if (instancia != this) return;
 
-        NetworkManager.Singleton.NetworkConfig.ConnectionApproval = true; // Habilita la aprobación de conexión para que el host pueda asignar spawn a cada jugador
-        NetworkManager.Singleton.ConnectionApprovalCallback += AprobarConexion; // Callback que se llama cuando un cliente intenta conectarse al host
-        BarajarPuntosDeSpawn(); // Baraja los puntos de spawn para que los jugadores no aparezcan siempre en el mismo orden
+        NetworkManager.Singleton.NetworkConfig.ConnectionApproval = true;
+        NetworkManager.Singleton.ConnectionApprovalCallback += AprobarConexion;
+        BarajarPuntosDeSpawn();
     }
 
     void OnDestroy()
@@ -87,19 +85,56 @@ public class NetworkLobbyManager : MonoBehaviour
         if (instancia != this) return;
         if (NetworkManager.Singleton != null)
         {
-            NetworkManager.Singleton.ConnectionApprovalCallback -= AprobarConexion; // Quita el callback de aprobación de conexión
-            if (NetworkManager.Singleton.SceneManager != null) 
-                NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= AlTerminarDeCargarEscena; // Quita el callback de carga de escena
+            NetworkManager.Singleton.ConnectionApprovalCallback -= AprobarConexion;
+            if (NetworkManager.Singleton.SceneManager != null)
+                NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= AlTerminarDeCargarEscena;
         }
     }
 
+    // Se llama cuando termina de cargar una escena (en el host y en los clientes)
     void AlTerminarDeCargarEscena(string nombreEscena, UnityEngine.SceneManagement.LoadSceneMode modo,
         System.Collections.Generic.List<ulong> clientesCompletados, System.Collections.Generic.List<ulong> clientesConTimeout)
     {
-        if (nombreEscena == escenaDeJuego) MapaListo = true; // Cuando la escena de juego termina de cargar, se habilita el movimiento de los jugadores
+        if (nombreEscena != escenaDeJuego) return;
+
+        MapaListo = true;
+
+        // Solo el host/servidor crea los jugadores
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+        CrearJugadoresFaltantes(nm);
     }
 
-    void BarajarPuntosDeSpawn() 
+    // Crea el jugador de cada cliente conectado que todavía no tenga uno
+    void CrearJugadoresFaltantes(NetworkManager nm)
+    {
+        GameObject prefab = nm.NetworkConfig.PlayerPrefab;
+        if (prefab == null)
+        {
+            Debug.LogError("[Lobby] El NetworkManager no tiene Player Prefab asignado.");
+            return;
+        }
+
+        foreach (ulong id in nm.ConnectedClientsIds)
+        {
+            if (nm.ConnectedClients.TryGetValue(id, out var cliente) && cliente.PlayerObject != null)
+                continue;
+
+            GameObject jugador = Instantiate(prefab, SiguientePosicionDeSpawn(), Quaternion.identity);
+            jugador.GetComponent<NetworkObject>().SpawnAsPlayerObject(id, true);
+        }
+    }
+
+    Vector3 SiguientePosicionDeSpawn()
+    {
+        Vector3 pos = PuntoCentralDelPiso();
+        if (ordenSpawnBarajado != null && ordenSpawnBarajado.Length > 0)
+            pos = ordenSpawnBarajado[siguienteSpawn % ordenSpawnBarajado.Length];
+        siguienteSpawn++;
+        return pos;
+    }
+
+    void BarajarPuntosDeSpawn()
     {
         ordenSpawnBarajado = (Vector3[])puntosDeSpawn.Clone();
         for (int i = ordenSpawnBarajado.Length - 1; i > 0; i--)
@@ -109,74 +144,49 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
-    void AprobarConexion(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response) 
+    void AprobarConexion(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-        Vector3 pos = PuntoCentralDelPiso();
-
-        if (ordenSpawnBarajado != null && ordenSpawnBarajado.Length > 0) 
-            pos = ordenSpawnBarajado[siguienteSpawn % ordenSpawnBarajado.Length]; 
-
-        siguienteSpawn++;
-
-        response.Approved = true; 
-        response.CreatePlayerObject = true; 
-        response.Position = pos; 
-        response.Rotation = Quaternion.identity; 
-        response.Pending = false; 
+        // En la sala de espera (escena Menu) NO se crea el jugador.
+        // Si alguien entra con la partida ya empezada, sí se crea.
+        response.Approved = true;
+        response.CreatePlayerObject = EscenaDeJuegoActiva;
+        response.Position = SiguientePosicionDeSpawn();
+        response.Rotation = Quaternion.identity;
+        response.Pending = false;
     }
 
-    Vector3 PuntoCentralDelPiso() 
+    Vector3 PuntoCentralDelPiso()
     {
-        return new Vector3((minPiso.x + maxPiso.x) * 0.5f, 1f, (minPiso.z + maxPiso.z) * 0.5f); 
+        return new Vector3((minPiso.x + maxPiso.x) * 0.5f, 1f, (minPiso.z + maxPiso.z) * 0.5f);
     }
 
-    // --------------------------------------------------------------------------------------------------------------------------//
-    // Muestra los bounds del piso del mapa y los puntos de spawn en la escena, para que se puedan ver y corregir en el Inspector
-    // --------------------------------------------------------------------------------------------------------------------------//
-    /* void OnDrawGizmos()
-     {
-         if (Application.isPlaying) return; 
-         Gizmos.color = new Color(1f, 0.35f, 0f, 0.9f); 
-         Gizmos.DrawWireCube(new Vector3((minPiso.x + maxPiso.x) * 0.5f, 2f, (minPiso.z + maxPiso.z) * 0.5f),
-                             new Vector3(maxPiso.x - minPiso.x, 6f, maxPiso.z - minPiso.z));
-
-         if (puntosDeSpawn == null) return;
-         for (int i = 0; i < puntosDeSpawn.Length; i++) 
-         {
-             bool valido = DentroDelPiso(puntosDeSpawn[i]);
-             Gizmos.color = !valido ? Color.red : (i == siguienteSpawn % Mathf.Max(1, puntosDeSpawn.Length) ? Color.yellow : Color.green); 
-             Gizmos.DrawSphere(puntosDeSpawn[i], 0.4f); 
-             Gizmos.DrawLine(puntosDeSpawn[i], puntosDeSpawn[i] + Vector3.up * 2f); 
-         }
-     }
-    */
-    bool DentroDelPiso(Vector3 p) // Comprueba si un punto está dentro de los bounds del piso del mapa, para validar los puntos de spawn
+    bool DentroDelPiso(Vector3 p)
     {
-        return p.x >= minPiso.x && p.x <= maxPiso.x && p.z >= minPiso.z && p.z <= maxPiso.z; // Comprueba si el punto está dentro de los bounds del piso del mapa, para validar los puntos de spawn
+        return p.x >= minPiso.x && p.x <= maxPiso.x && p.z >= minPiso.z && p.z <= maxPiso.z;
     }
 
-    void ValidarPuntos() // Valida los puntos de spawn, eliminando los que están fuera de los bounds del piso del mapa y dejando solo los válidos
+    void ValidarPuntos()
     {
-        if (puntosDeSpawn == null || puntosDeSpawn.Length == 0) return; // Si no hay puntos de spawn, no hace nada
+        if (puntosDeSpawn == null || puntosDeSpawn.Length == 0) return;
 
         int validos = 0;
-        for (int i = 0; i < puntosDeSpawn.Length; i++) // Recorre todos los puntos de spawn y comprueba si están dentro de los bounds del piso del mapa
+        for (int i = 0; i < puntosDeSpawn.Length; i++)
         {
-            if (DentroDelPiso(puntosDeSpawn[i])) // Si el punto de spawn está dentro de los bounds del piso del mapa, lo deja en el array de puntos de spawn válidos
+            if (DentroDelPiso(puntosDeSpawn[i]))
             {
-                if (validos != i) puntosDeSpawn[validos] = puntosDeSpawn[i]; // Si el punto de spawn válido no está en la posición correcta del array, lo mueve a la posición correcta
+                if (validos != i) puntosDeSpawn[validos] = puntosDeSpawn[i];
                 validos++;
             }
             else
             {
-                Debug.LogWarning($"[Lobby] Punto de spawn {i} ({puntosDeSpawn[i]}) queda FUERA de los bounds del piso y fue descartado. Corregilo en el Inspector.");
+                Debug.LogWarning($"[Lobby] Punto de spawn {i} ({puntosDeSpawn[i]}) queda FUERA de los bounds del piso y fue descartado.");
             }
         }
 
         if (validos == 0)
         {
             Debug.LogWarning("[Lobby] Ningun punto de spawn es valido, se usa el centro del piso.");
-            puntosDeSpawn = new Vector3[] { PuntoCentralDelPiso() }; // Si no hay puntos de spawn válidos, se usa el centro del piso como punto de spawn por defecto
+            puntosDeSpawn = new Vector3[] { PuntoCentralDelPiso() };
         }
         else if (validos < puntosDeSpawn.Length)
         {
@@ -184,43 +194,72 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
+    // Espera a que se termine de cerrar una conexión anterior
+    async Task EsperarCierreDeRed()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm.IsListening && !nm.ShutdownInProgress) nm.Shutdown();
+
+        float espera = 0f;
+        while ((nm.ShutdownInProgress || nm.IsListening) && espera < 3f)
+        {
+            await Task.Yield();
+            espera += Time.unscaledDeltaTime;
+        }
+    }
+
     // ---------------------------------------------------------------
-    // HOST: crea asignacion en Relay y arranca el host
+    // HOST: crea asignacion en Relay y arranca el host (NO carga Arena)
     // ---------------------------------------------------------------
-    public async Task<string> IniciarHost() 
+    public async Task<string> IniciarHost()
     {
         ValidarPuntos();
         BarajarPuntosDeSpawn();
+        siguienteSpawn = 0;
         JoinCodeActual = "";
 
         try
         {
+            if (NetworkManager.Singleton.IsListening || NetworkManager.Singleton.ShutdownInProgress)
+                await EsperarCierreDeRed();
+
             await InicializarServicios();
 
-            // Crear asignacion: 7 clientes + 1 host = 8 jugadores max
+            // 7 clientes + 1 host = 8 jugadores max
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(7);
 
-            // Obtener Join Code que compartis con los demas jugadores
             JoinCodeActual = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             Debug.Log($"[Lobby] JOIN CODE: {JoinCodeActual}");
 
-            // Configurar UnityTransport con los datos de Relay
             var transporte = ObtenerTransporte();
             if (transporte == null) return null;
 
-            var relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls"); 
-            transporte.SetRelayServerData(relayServerData); 
+            var relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
+            transporte.SetRelayServerData(relayServerData);
 
-            // Arrancar host NGO
-            NetworkManager.Singleton.OnServerStarted += CargarEscenaDeJuego;
             if (NetworkManager.Singleton.StartHost())
             {
+                NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= AlTerminarDeCargarEscena;
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += AlTerminarDeCargarEscena;
+
+                Debug.Log("[Lobby] Host iniciado. Prefab sala asignado: " + (lobbyRoomStatePrefab != null));
+
+                // Crear el estado de la sala por código
+                if (lobbyRoomStatePrefab != null)
+                {
+                    var sala = Instantiate(lobbyRoomStatePrefab);
+                    sala.GetComponent<NetworkObject>().Spawn();
+                    Debug.Log("[Lobby] LobbyRoomState creado y spawneado.");
+                }
+                else
+                {
+                    Debug.LogError("[Lobby] Falta asignar Lobby Room State Prefab en el Inspector de NetworkLobby.");
+                }
+
                 return JoinCodeActual;
             }
             else
             {
-                NetworkManager.Singleton.OnServerStarted -= CargarEscenaDeJuego;
                 Debug.LogError("[Lobby] ERROR: no se pudo iniciar el host");
                 return null;
             }
@@ -232,28 +271,26 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
+    // Lo llama el botón INICIAR PARTIDA de la sala de espera (solo el host)
+    public void IniciarPartida()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
+        nm.SceneManager.LoadScene(escenaDeJuego, UnityEngine.SceneManagement.LoadSceneMode.Single);
+    }
+
     // ---------------------------------------------------------------
     // CLIENTE: se conecta con el Join Code
     // ---------------------------------------------------------------
-    public async Task<bool> IniciarCliente(string joinCode) 
+    public async Task<bool> IniciarCliente(string joinCode)
     {
         JoinCodeActual = "";
         ValidarPuntos();
 
         try
         {
-            // Si quedó una conexión previa a medias, se limpia
             if (NetworkManager.Singleton.IsListening || NetworkManager.Singleton.ShutdownInProgress)
-            {
-                if (!NetworkManager.Singleton.ShutdownInProgress) NetworkManager.Singleton.Shutdown();
-
-                float espera = 0f;
-                while ((NetworkManager.Singleton.ShutdownInProgress || NetworkManager.Singleton.IsListening) && espera < 3f)
-                {
-                    await Task.Yield();
-                    espera += Time.unscaledDeltaTime;
-                }
-            }
+                await EsperarCierreDeRed();
 
             await InicializarServicios();
 
@@ -267,8 +304,18 @@ public class NetworkLobbyManager : MonoBehaviour
 
             if (NetworkManager.Singleton.StartClient())
             {
+                JoinCodeActual = joinCode;
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= AlTerminarDeCargarEscena;
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += AlTerminarDeCargarEscena;
+
+                // Si el cliente ya tiene cargada una escena (Menu, ArenaFondo), no la recarga.
+                // La escena de juego (Arena) sí se carga siempre.
+                NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = (indice, nombre, modo) =>
+                {
+                    var escena = UnityEngine.SceneManagement.SceneManager.GetSceneByName(nombre);
+                    if (escena.isLoaded && nombre != escenaDeJuego) return false;
+                    return true;
+                };
                 return true;
             }
 
@@ -277,7 +324,6 @@ public class NetworkLobbyManager : MonoBehaviour
         }
         catch (RelayServiceException e)
         {
-            // Código inexistente, vencido o mal escrito
             Debug.LogWarning($"[Lobby] Join Code inválido o sala no disponible: {e.Message}");
             return false;
         }
@@ -290,7 +336,6 @@ public class NetworkLobbyManager : MonoBehaviour
         }
     }
 
-    // Inicializa UGS y autentica de forma anonima (necesario antes de Relay)
     async Task InicializarServicios()
     {
         if (UnityServices.State != ServicesInitializationState.Initialized)
@@ -300,7 +345,7 @@ public class NetworkLobbyManager : MonoBehaviour
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
     }
 
-    Unity.Netcode.Transports.UTP.UnityTransport ObtenerTransporte() // Devuelve el componente UnityTransport del NetworkManager, o lo busca en la escena si no está en el mismo GameObject
+    Unity.Netcode.Transports.UTP.UnityTransport ObtenerTransporte()
     {
         var transporte = GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
         if (transporte == null)
@@ -310,11 +355,6 @@ public class NetworkLobbyManager : MonoBehaviour
         return transporte;
     }
 
-    void CargarEscenaDeJuego()
-    {
-        NetworkManager.Singleton.OnServerStarted -= CargarEscenaDeJuego;
-        NetworkManager.Singleton.SceneManager.LoadScene(escenaDeJuego, UnityEngine.SceneManagement.LoadSceneMode.Single);
-    }
     public static Vector3 ObtenerPuntoDeRespawn()
     {
         if (instancia == null || instancia.ordenSpawnBarajado == null || instancia.ordenSpawnBarajado.Length == 0)
@@ -323,8 +363,4 @@ public class NetworkLobbyManager : MonoBehaviour
         int indice = Random.Range(0, instancia.ordenSpawnBarajado.Length);
         return instancia.ordenSpawnBarajado[indice];
     }
-
-
-
 }
-

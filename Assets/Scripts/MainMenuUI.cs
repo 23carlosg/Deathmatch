@@ -152,6 +152,7 @@ public class MainMenuUI : MonoBehaviour
             if (iniciarHostButton != null) iniciarHostButton.SetEnabled(true);
             return;
         }
+        if (LobbyRoomUI.Instance != null) LobbyRoomUI.Instance.Abrir();
     }
 
     private async void UnirseServidor()
@@ -180,6 +181,10 @@ public class MainMenuUI : MonoBehaviour
             Debug.LogWarning("[UI] No se pudo unir. Revisá el código e intentá de nuevo.");
             joinCodeInput.value = "";
             joinCodeInput.textEdition.placeholder = "Esta mal ingrese el codigo correcto";
+        }
+        else
+        {
+            if (LobbyRoomUI.Instance != null) LobbyRoomUI.Instance.Abrir();
         }
         // Esperar lo que falte para completar los 3 segundos
         await espera;

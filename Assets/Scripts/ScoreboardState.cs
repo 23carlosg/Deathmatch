@@ -7,18 +7,21 @@ public struct PlayerEntry : INetworkSerializable, IEquatable<PlayerEntry>
 {
     public ulong ClientId;
     public FixedString64Bytes Name;
-    public int Score;
+    public int Score;   // kills del jugador
+    public int Deaths;  // veces que murio
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref ClientId);
         serializer.SerializeValue(ref Name);
         serializer.SerializeValue(ref Score);
+        serializer.SerializeValue(ref Deaths);
     }
 
     public bool Equals(PlayerEntry other)
     {
-        return ClientId == other.ClientId && Name == other.Name && Score == other.Score;
+        return ClientId == other.ClientId && Name == other.Name
+            && Score == other.Score && Deaths == other.Deaths;
     }
 }
 
