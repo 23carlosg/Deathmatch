@@ -104,9 +104,12 @@ public class PauseMenuUI : MonoBehaviour
 
         if (joinCodeLabel != null)
         {
-            string codigo = NetworkLobbyManager.JoinCodeActual;
-            joinCodeLabel.text = string.IsNullOrEmpty(codigo) ? "" : $"Código: {codigo}";
-            joinCodeLabel.style.display = string.IsNullOrEmpty(codigo) ? DisplayStyle.None : DisplayStyle.Flex;
+            bool esHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
+            string codigo = esHost ? NetworkLobbyManager.JoinCodeActual : "";
+            bool mostrar = !string.IsNullOrEmpty(codigo);
+
+            joinCodeLabel.text = mostrar ? $"Código: {codigo}" : "";
+            joinCodeLabel.style.display = mostrar ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         if (pausePanel != null) pausePanel.style.display = DisplayStyle.Flex;

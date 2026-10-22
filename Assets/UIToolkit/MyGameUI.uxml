@@ -1,7 +1,8 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/UIToolkit/ButtonStyle.uss?fileID=7433441132597879392&amp;guid=1f1157271424e0f42aeab47b812abc4c&amp;type=3#ButtonStyle"/>
     <Style src="project://database/Assets/UIToolkit/ScoreboardStyle.uss?fileID=7433441132597879392&amp;guid=b9f435f6ffe21e241b7a51da9b2b4d4b&amp;type=3#ScoreboardStyle"/>
-    <ui:VisualElement name="MainMenuPanel" style="flex-grow: 1; background-image: none; display: none;">
+    <Style src="project://database/Assets/UIToolkit/WaitingRoomPanel.uss?fileID=7433441132597879392&amp;guid=924c211dffe82c9478752bfb9f7bebe4&amp;type=3#WaitingRoomPanel"/>
+    <ui:VisualElement name="MainMenuPanel" style="flex-grow: 1; background-image: none; display: none; overflow: visible;">
         <ui:Label text="MENU" name="Menu" style="font-size: 125px; -unity-text-align: upper-center; color: rgb(255, 255, 255); -unity-font-style: bold; -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 5px 5px 5px rgb(0, 0, 0); top: 0; margin-top: 100px;"/>
         <ui:Button text="PLAY" name="PlayButton" class="ButtonStyle" style="top: 150px;"/>
         <ui:Button text="OPCIONES" name="SettingsButton" class="ButtonStyle" style="top: 180px;"/>
@@ -31,5 +32,17 @@
             <ui:Label text="Deaths" class="sb-score"/>
         </ui:VisualElement>
         <ui:ScrollView name="ScoreboardList"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="WaitingRoomPanel" class="room" style="flex-grow: 1; display: none;">
+        <ui:VisualElement class="room-code-box" style="flex-grow: 1;">
+            <ui:Label text="Código: ------" name="RoomCodeLabel" class="room-code"/>
+            <ui:Button text="Copiar" name="CopyCodeButton" class="room-btn"/>
+        </ui:VisualElement>
+        <ui:Label text="SALA DE ESPERA" class="room-title"/>
+        <ui:Label text="Jugadores: 0" name="RoomCountLabel" class="room-count"/>
+        <ui:ScrollView name="RoomPlayerList" class="room-list"/>
+        <ui:Label text="Esperando que el anfitrión inicie la partida..." name="RoomWaitingLabel" class="room-waiting"/>
+        <ui:Button text="INICIAR PARTIDA" name="StartGameButton" class="room-btn room-start"/>
+        <ui:Button text="Salir" name="LeaveRoomButton" class="room-btn"/>
     </ui:VisualElement>
 </ui:UXML>
