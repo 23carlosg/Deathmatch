@@ -1,0 +1,14 @@
+.scoreboard {
+    position: absolute;
+    left: 50%; top: 15%;
+    width: 500px;
+    translate: -50% 0;
+    padding: 16px;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 8px;
+}
+.scoreboard-title { font-size: 24px; color: white; -unity-text-align: middle-center; margin-bottom: 10px; }
+.sb-row { flex-direction: row; padding: 6px 8px; }
+.sb-name { flex-grow: 1; color: white; font-size: 18px; }
+.sb-score { width: 100px; color: white; font-size: 18px; -unity-text-align: middle-right; }
+.sb-local .sb-name, .sb-local .sb-score { color: #ffd84a; }

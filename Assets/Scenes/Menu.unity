@@ -297,6 +297,7 @@ GameObject:
   - component: {fileID: 1104524579}
   - component: {fileID: 1104524578}
   - component: {fileID: 1104524580}
+  - component: {fileID: 1104524581}
   m_Layer: 5
   m_Name: PanelRenderer
   m_TagString: Untagged
@@ -390,6 +391,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuUI
   meteorSettings: {fileID: 11400000, guid: c9bef19ffae578348912b7677f956167, type: 2}
+--- !u!114 &1104524581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1104524576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fdf65d0f103a6f45b61bf6fd2030253, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LobbyRoomUI
 --- !u!1 &1407899128
 GameObject:
   m_ObjectHideFlags: 0
@@ -556,6 +569,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb20f3c083c5cef40bb2e229b80f72c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkLobbyManager
+  lobbyRoomStatePrefab: {fileID: 9082075792423099472, guid: 3125891bd985b9a4fb013e87fdc7d482, type: 3}
   escenaDeJuego: Arena
   puntosDeSpawn:
   - {x: -134.0847, y: 1, z: 106.4802}
