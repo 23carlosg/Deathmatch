@@ -30,7 +30,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
     public float suavizadoCamara = 10f;
 
     [Header("Camara - Colision con paredes")]
-    [Tooltip("Capas que acercan la camara (marca solo Walls y el suelo; NO la capa del jugador ni bots)")]
+    [Tooltip("Capas que acercan la camara y que bloquean los efectos del arma (marca solo Walls y el suelo; NO la capa del jugador ni bots)")]
     public LayerMask capasColisionCamara = ~0;
     public float radioColisionCamara = 0.25f;
     public float margenPared = 0.1f;
@@ -827,7 +827,8 @@ public class PlayerNetworkMovement : NetworkBehaviour
         }
 
         // efecto local inmediato en la boca del arma
-        Vector3 posicionDeLaBoca = PuntoDeDisparo();
+        // (si el arma esta metida en una pared, la boca se acerca al lado del jugador)
+        Vector3 posicionDeLaBoca = AjustarBocaPorPared(PuntoDeDisparo());
         CrearEfectoDisparo(posicionDeLaBoca, BocaActual());
 
         // rayo laser: de la boca del arma al punto de impacto (o al maximo alcance)
@@ -861,6 +862,26 @@ public class PlayerNetworkMovement : NetworkBehaviour
         return bocaDelArma;
     }
 
+    // Si hay una pared entre el pecho del jugador y la boca del arma (arma metida en el muro),
+    // devuelve un punto justo antes de la pared, del lado del jugador.
+    // Usa la misma mascara que la camara (Capas Colision Camara): marca solo Walls y el suelo.
+    Vector3 AjustarBocaPorPared(Vector3 boca)
+    {
+        float alturaPecho = controller != null ? controller.height * 0.6f : 1.2f;
+        Vector3 desde = transform.position + Vector3.up * alturaPecho;
+        Vector3 hacia = boca - desde;
+        float dist = hacia.magnitude;
+        if (dist < 0.01f) return boca;
+
+        Vector3 dir = hacia / dist;
+        if (Physics.Raycast(desde, dir, out RaycastHit h, dist, capasColisionCamara, QueryTriggerInteraction.Ignore)
+            && !DelPropioCuerpo(h.collider.transform))
+        {
+            return h.point - dir * 0.15f;   // mas que el Near Plane de la luz, para que la pared proyecte sombra
+        }
+        return boca;
+    }
+
     Vector3 PuntoDeDisparo()
     {
         Transform boca = BocaActual();
@@ -868,15 +889,29 @@ public class PlayerNetworkMovement : NetworkBehaviour
         return PuntoDelCuerpoEnMundo(new Vector3(0.25f, 1.35f, 0.7f));
     }
 
-    // Crea el destello y lo destruye solo, aunque el prefab no tenga Stop Action en Destroy
-    // Si hay boca activa, el destello nace como hijo de ella y sigue al arma mientras te movés
+    // Crea el destello y lo destruye solo, aunque el prefab no tenga Stop Action en Destroy.
+    // Si la posicion coincide con la boca, el destello nace como hijo de ella y sigue al arma
+    // mientras te movés; si fue acercada por una pared, nace suelto en ese punto.
     void CrearEfectoDisparo(Vector3 posicion, Transform boca)
     {
         if (efectoDisparo == null) return;
 
-        GameObject fx = (boca != null && boca.gameObject.activeInHierarchy)
+        bool pegada = boca != null && boca.gameObject.activeInHierarchy
+                      && Vector3.Distance(posicion, boca.position) < 0.02f;
+
+        GameObject fx = pegada
             ? Instantiate(efectoDisparo, boca.position, boca.rotation, boca)
-            : Instantiate(efectoDisparo, posicion, Quaternion.identity);
+            : Instantiate(efectoDisparo, posicion, boca != null ? boca.rotation : Quaternion.identity);
+
+        // Arma pegada a una pared: se quitan las chispas (Particle Systems hijos) para que no
+        // atraviesen el muro. Quedan el destello y la luz, que son el sistema raiz.
+        if (!pegada)
+        {
+            foreach (ParticleSystem ps in fx.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                if (ps.gameObject != fx) Destroy(ps.gameObject);
+            }
+        }
 
         Destroy(fx, 0.3f);
     }
@@ -950,8 +985,13 @@ public class PlayerNetworkMovement : NetworkBehaviour
     {
         if (esLocal) return;
         recoilArma = 1f;
-        CrearEfectoDisparo(posicionDeLaBoca, BocaActual());
-        CrearLaser(posicionDeLaBoca, puntoFinal);
+
+        // Usa la boca real de esta instancia (si existe) y la acerca si hay una pared de por medio
+        Transform boca = BocaActual();
+        Vector3 posBoca = AjustarBocaPorPared(boca != null ? boca.position : posicionDeLaBoca);
+
+        CrearEfectoDisparo(posBoca, boca);
+        CrearLaser(posBoca, puntoFinal);
         ReproducirDisparo();
     }
 
