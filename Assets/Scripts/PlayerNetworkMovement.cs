@@ -242,23 +242,29 @@ public class PlayerNetworkMovement : NetworkBehaviour
             float t = 1f - Mathf.Exp(-15f * Time.deltaTime);
             velXSuave = Mathf.Lerp(velXSuave, redVelX.Value, t);
             velYSuave = Mathf.LerpAngle(velYSuave, redVelY.Value, t);
-            animator.SetFloat("VelX", velXSuave);
-            animator.SetFloat("VelY", velYSuave);
-            bool pisoRemoto = redEnElPiso.Value;
-            animator.SetBool("isGrounded", pisoRemoto);
+            if (!Muerto)
+            {
+                animator.SetFloat("VelX", velXSuave);
+                animator.SetFloat("VelY", velYSuave);
+                animator.SetBool("isGrounded", redEnElPiso.Value);
+            }
             AplicarArma(redArma.Value);
             AplicarRecoilDelArma();
             RevisarEstadoDeSalud();
+            if (Muerto) CaerMuerto();
             return;
         }
 
         if (Keyboard.current == null) return;
-
         if (!NetworkLobbyManager.PuedeMoverse) return;
 
         RevisarEstadoDeSalud();
 
-        if (Muerto) return;
+        if (Muerto)
+        {
+            CaerMuerto();
+            return;
+        }
 
         bool libre = PlayerCamera.CamaraLibre;
 
@@ -285,6 +291,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
     }
 
     bool camaraLibreAnterior;
+    bool murioCayendo;
 
     void ActualizarMiraSegunCamaraLibre()
     {
@@ -726,6 +733,23 @@ public class PlayerNetworkMovement : NetworkBehaviour
         }
     }
 
+    // Mientras está muerto en el aire, aplica gravedad hasta tocar el piso
+    void CaerMuerto()
+    {
+        if (!murioCayendo || controller == null || !controller.enabled) return;
+
+        if (controller.isGrounded)
+        {
+            murioCayendo = false;
+            velocidadVertical = 0f;
+            controller.enabled = false; // ya en el piso: se apaga como antes
+            return;
+        }
+
+        velocidadVertical -= gravedad * Time.deltaTime;
+        controller.Move(Vector3.up * velocidadVertical * Time.deltaTime);
+    }
+
     // ------------------------- APUNTAR / MIRA -------------------------
 
     void LeerApuntar()
@@ -1015,10 +1039,20 @@ public class PlayerNetworkMovement : NetworkBehaviour
 
         Muerto = estaMuerto;
 
-        if (controller != null) controller.enabled = !Muerto;
+        if (controller != null && !Muerto) controller.enabled = true;
+        if (Muerto) { velocidadHorizontal = Vector3.zero; murioCayendo = true; }
 
         if (animator != null)
+        {
+            if (Muerto)
+            {
+                // Sacar al Animator del salto/aterrizaje para que pueda entrar a la animación de muerte
+                animator.SetBool("isGrounded", true);
+                animator.SetFloat("VelX", 0f);
+                animator.SetFloat("VelY", 0f);
+            }
             animator.SetBool("Dead", Muerto);
+        }
 
         if (esLocal)
         {

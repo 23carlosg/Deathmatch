@@ -56,11 +56,11 @@ public class LobbyRoomState : NetworkBehaviour
     // Lo llama el cliente al apretar el botón LISTO
     public void AlternarListo()
     {
-        if (IsSpawned) AlternarListoServerRpc();
+        if (IsSpawned) AlternarListoRpc();
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    void AlternarListoServerRpc(ServerRpcParams rpcParams = default)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void AlternarListoRpc(RpcParams rpcParams = default)
     {
         ulong id = rpcParams.Receive.SenderClientId;
         if (id == NetworkManager.ServerClientId) return; // el host no usa "listo"
