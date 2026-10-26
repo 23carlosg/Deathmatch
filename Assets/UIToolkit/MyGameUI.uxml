@@ -27,7 +27,7 @@
         <ui:Button text="DESCONECTAR" name="DisconnectButton" class="ButtonStyle" style="top: 427px;"/>
     </ui:VisualElement>
     <ui:VisualElement name="ScoreboardPanel" class="scoreboard" style="flex-grow: 1; display: none; background-color: rgba(20, 24, 36, 0.863); border-top-width: 2px; border-left-color: rgb(90, 110, 160); border-right-color: rgb(90, 110, 160); border-top-color: rgb(90, 110, 160); border-bottom-color: rgb(90, 110, 160); border-bottom-width: 2px; border-right-width: 2px; border-left-width: 2px;">
-        <ui:VisualElement class="sb-row sb-header">
+        <ui:VisualElement class="sb-row sb-header" style="display: flex;">
             <ui:Label text="Jugador" class="sb-name"/>
             <ui:Label text="Kills" class="sb-score"/>
             <ui:Label text="Deaths" class="sb-score"/>
