@@ -3,7 +3,7 @@
     <Style src="project://database/Assets/UIToolkit/ScoreboardStyle.uss?fileID=7433441132597879392&amp;guid=b9f435f6ffe21e241b7a51da9b2b4d4b&amp;type=3#ScoreboardStyle"/>
     <Style src="project://database/Assets/UIToolkit/WaitingRoomPanel.uss?fileID=7433441132597879392&amp;guid=924c211dffe82c9478752bfb9f7bebe4&amp;type=3#WaitingRoomPanel"/>
     <ui:VisualElement name="MainMenuPanel" style="flex-grow: 1; background-image: none; display: none; overflow: visible;">
-        <ui:Label text="MENU" name="Menu" style="font-size: 125px; -unity-text-align: upper-center; color: rgb(255, 255, 255); -unity-font-style: bold; -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 5px 5px 5px rgb(0, 0, 0); top: 0; margin-top: 100px;"/>
+        <ui:Label text="Orbital Arena" name="Menu" style="font-size: 125px; -unity-text-align: upper-center; color: rgb(255, 255, 255); -unity-font-style: bold; -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 5px 5px 5px rgb(0, 0, 0); top: 0; margin-top: 100px; background-image: none; -unity-font-definition: url(&quot;project://database/Assets/fonts/earthorbiter.ttf?fileID=12800000&amp;guid=ee5f36273e3ba294786d963b23b2ce04&amp;type=3#earthorbiter&quot;);"/>
         <ui:Button text="PLAY" name="PlayButton" class="ButtonStyle" style="top: 150px;"/>
         <ui:Button text="OPCIONES" name="SettingsButton" class="ButtonStyle" style="top: 180px;"/>
         <ui:Button text="SALIR" name="QuitButton" class="ButtonStyle" style="top: 210px;"/>
