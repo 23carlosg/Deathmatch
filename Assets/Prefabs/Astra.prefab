@@ -251,6 +251,8 @@ MonoBehaviour:
   sensibilidad: 2
   limiteVertical: 80
   rotacionVertical: 0
+  velocidadLibre: 10
+  multiplicadorRapido: 3
 --- !u!1 &526685094956421993
 GameObject:
   m_ObjectHideFlags: 0
@@ -1100,7 +1102,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerNetworkMovement
   ShowTopMostFoldoutHeaderGroup: 1
   velocidadCaminar: 2.5
-  velocidadCorrer: 6
+  velocidadCorrer: 8
   controlEnElAire: 0.35
   aceleracion: 12
   alturaSalto: 1.2

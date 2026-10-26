@@ -6,7 +6,6 @@ public class PlayerCamera : MonoBehaviour
 {
 
     private readonly List<Renderer> ocultados = new List<Renderer>();
-
     public Transform jugador;
     public float sensibilidad = 2f;
     public float limiteVertical = 80f;
@@ -129,6 +128,8 @@ public class PlayerCamera : MonoBehaviour
 
         transform.SetParent(null, true);
 
+        FindAnyObjectByType<HealthBarUI>(FindObjectsInactive.Include).gameObject.SetActive(false);
+
         MostrarJugador(false);
     }
 
@@ -140,6 +141,8 @@ public class PlayerCamera : MonoBehaviour
         transform.SetParent(jugador, false);
         transform.localPosition = posLocalOriginal;
         transform.localRotation = Quaternion.Euler(rotacionVertical, 0f, 0f);
+
+        FindAnyObjectByType<HealthBarUI>(FindObjectsInactive.Include).gameObject.SetActive(true);
 
         MostrarJugador(true);
     }
