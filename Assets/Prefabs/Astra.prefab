@@ -1119,7 +1119,7 @@ MonoBehaviour:
   suavizadoCamara: 10
   capasColisionCamara:
     serializedVersion: 2
-    m_Bits: 640
+    m_Bits: 896
   radioColisionCamara: 0.25
   margenPared: 0.1
   distanciaMinimaCamara: 0.3
