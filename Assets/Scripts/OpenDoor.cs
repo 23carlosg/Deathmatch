@@ -36,4 +36,11 @@ public class OpenDoor : MonoBehaviour
         if (other.CompareTag(playerTag))
             playerInRange = true;
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag(playerTag)) return;
+
+        playerInRange = false;
+    }
 }
