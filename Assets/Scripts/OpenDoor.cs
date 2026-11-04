@@ -47,7 +47,7 @@ public class OpenDoor : NetworkBehaviour
             ToggleServerRpc();
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void ToggleServerRpc()
     {
         isOpen.Value = !isOpen.Value;
@@ -55,18 +55,18 @@ public class OpenDoor : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (IsLocalPlayer(other))
+        if (IsLocalPlayerDoor(other))
             localPlayerInRange = true;
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (IsLocalPlayer(other))
+        if (IsLocalPlayerDoor(other))
             localPlayerInRange = false;
     }
 
     // Solo cuenta MI jugador, no los remotos
-    private bool IsLocalPlayer(Collider other)
+    private bool IsLocalPlayerDoor(Collider other)
     {
         if (!other.CompareTag(playerTag)) return false;
         var netObj = other.GetComponentInParent<NetworkObject>();
