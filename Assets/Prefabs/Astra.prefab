@@ -909,6 +909,12 @@ GameObject:
   - component: {fileID: 6876227095543567802}
   - component: {fileID: 159179724157228310}
   - component: {fileID: 8129155216706509105}
+  - component: {fileID: 5422635337054727660}
+  - component: {fileID: 6529731889648486603}
+  - component: {fileID: 7104335420048774712}
+  - component: {fileID: 7728891736360819621}
+  - component: {fileID: 1833505411324473345}
+  - component: {fileID: 555993190151627057}
   m_Layer: 0
   m_Name: Astra
   m_TagString: Player
@@ -1101,62 +1107,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerNetworkMovement
   ShowTopMostFoldoutHeaderGroup: 1
-  velocidadCaminar: 2.5
-  velocidadCorrer: 8
-  controlEnElAire: 0.35
-  aceleracion: 12
-  alturaSalto: 1.2
-  multiplicadorSaltoRifle: 1.5
-  gravedad: 22
-  coyoteTime: 0.15
-  bufferSalto: 0.15
-  alturaCamara: 1.6
-  atrasCamara: 2.5
-  ajusteDePies: -0.01
-  hombroApuntado: 0.45
-  desvioCamaraLibre: 0.6
-  fovApuntado: 30
-  suavizadoCamara: 10
-  capasColisionCamara:
-    serializedVersion: 2
-    m_Bits: 896
-  radioColisionCamara: 0.25
-  margenPared: 0.1
-  distanciaMinimaCamara: 0.3
-  distanciaOcultarCuerpo: 1
-  histeresisOcultar: 0.25
-  alphaCuerpoCerca: 0.35
-  velocidadFundido: 8
-  danioRifle: 20
-  retrocesoRifle: 0.5
-  retrocesoRotacionRifle: 6
-  cadenciaRifle: 6
-  danioPistola: 25
-  retrocesoPistola: 0
-  retrocesoRotacionPistola: 6
-  cadenciaPistola: 4
-  bocaDelArma: {fileID: 0}
-  bocaPistola: {fileID: 2747792463390018940}
-  bocaRifle: {fileID: 6343672551878361865}
-  efectoDisparo: {fileID: 9095786582126979589, guid: 1c05bbf79b54a794a81ae9efa6883d57, type: 3}
-  efectoImpacto: {fileID: 0}
-  materialLaser: {fileID: 2100000, guid: 932dd924d267de14e827e0f97286e8f8, type: 2}
-  colorLaser: {r: 0.2, g: 0.9, b: 1, a: 1}
-  anchoLaser: 0.06
-  duracionLaser: 0.08
-  alcance: 200
-  dispersion: 1.5
-  sonidoDisparo: {fileID: 8300000, guid: 227ad2ea2053e7b45bffd55b6b2824af, type: 3}
-  volumenDisparo: 1
-  saludMaxima: 100
-  tiempoParaRevivir: 5
   animator: {fileID: 2547701997046352279}
   controlCamara: {fileID: 0}
-  armaRifle: {fileID: 0}
-  armaPistola: {fileID: 0}
-  tieneRifle: 0
-  tienePistola: 0
-  radioCuerpoBot: 0.55
 --- !u!114 &159179724157228310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1184,6 +1136,135 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cec4eab1e30bd4d4784e79fb6ee24b69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDetection
+--- !u!114 &5422635337054727660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321298133441418328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f638be440aa1a9f4fa3a2a0224eb2402, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
+  ShowTopMostFoldoutHeaderGroup: 1
+  velocidadCaminar: 2.5
+  velocidadCorrer: 6
+  controlEnElAire: 0.35
+  aceleracion: 12
+  alturaSalto: 1.2
+  multiplicadorSaltoRifle: 1.5
+  gravedad: 22
+  coyoteTime: 0.15
+  bufferSalto: 0.15
+--- !u!114 &6529731889648486603
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321298133441418328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 929be23c5c3403c4486f21e91947060d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
+  ShowTopMostFoldoutHeaderGroup: 1
+  saludMaxima: 100
+  tiempoParaRevivir: 5
+--- !u!114 &7104335420048774712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321298133441418328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2f5cb94c4f926c4bbc3047852efd728, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWeapons
+  ShowTopMostFoldoutHeaderGroup: 1
+  danioRifle: 20
+  retrocesoRifle: 0.5
+  retrocesoRotacionRifle: 6
+  cadenciaRifle: 6
+  danioPistola: 25
+  retrocesoPistola: 0
+  retrocesoRotacionPistola: 6
+  cadenciaPistola: 4
+  bocaDelArma: {fileID: 0}
+  bocaPistola: {fileID: 2747792463390018940}
+  bocaRifle: {fileID: 6343672551878361865}
+  efectoDisparo: {fileID: 9095786582126979589, guid: 1c05bbf79b54a794a81ae9efa6883d57, type: 3}
+  efectoImpacto: {fileID: 0}
+  alcance: 200
+  dispersion: 1.5
+  materialLaser: {fileID: 2100000, guid: 932dd924d267de14e827e0f97286e8f8, type: 2}
+  colorLaser: {r: 0.2, g: 0.9, b: 1, a: 1}
+  anchoLaser: 0.06
+  duracionLaser: 0.08
+  sonidoDisparo: {fileID: 8300000, guid: 227ad2ea2053e7b45bffd55b6b2824af, type: 3}
+  volumenDisparo: 1
+  armaRifle: {fileID: 0}
+  armaPistola: {fileID: 0}
+  tieneRifle: 0
+  tienePistola: 0
+--- !u!114 &7728891736360819621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321298133441418328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2312efa6727986149996364359069fd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCameraRig
+  alturaCamara: 1.6
+  atrasCamara: 2.5
+  hombroApuntado: 0.45
+  desvioCamaraLibre: 0.6
+  fovApuntado: 30
+  suavizadoCamara: 10
+  capasColisionCamara:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  radioColisionCamara: 0.25
+  margenPared: 0.1
+  distanciaMinimaCamara: 0.3
+  distanciaOcultarCuerpo: 1
+  histeresisOcultar: 0.25
+  alphaCuerpoCerca: 0.35
+  velocidadFundido: 8
+--- !u!114 &1833505411324473345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321298133441418328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22a14d381adb97c49ae7c9203a10881c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerBodySetup
+  ajusteDePies: 0
+--- !u!114 &555993190151627057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2321298133441418328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 239e0cbcc420b454aaeab322e0007b83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BotSeparation
+  radioCuerpoBot: 0.55
 --- !u!1 &2330306918595433097
 GameObject:
   m_ObjectHideFlags: 0

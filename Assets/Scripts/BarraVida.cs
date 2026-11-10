@@ -5,9 +5,9 @@ using UnityEngine.UI;
 public class HealthBarUI : MonoBehaviour
 {
     public Slider slider;
-    public GameObject fill; // Arrastrá acá el objeto "Fill" (dentro de Fill Area)
+    public GameObject fill;
 
-    private PlayerNetworkMovement jugadorLocal;
+    private PlayerHealth jugadorLocal;
 
     void Update()
     {
@@ -18,7 +18,7 @@ public class HealthBarUI : MonoBehaviour
             NetworkObject localPlayerObject = NetworkManager.Singleton.LocalClient.PlayerObject;
             if (localPlayerObject == null) return;
 
-            jugadorLocal = localPlayerObject.GetComponent<PlayerNetworkMovement>();
+            jugadorLocal = localPlayerObject.GetComponent<PlayerHealth>();
             if (jugadorLocal == null) return;
 
             slider.maxValue = jugadorLocal.saludMaxima;
