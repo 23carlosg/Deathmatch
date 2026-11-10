@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Cursor = UnityEngine.Cursor;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -11,6 +12,12 @@ public class ScoreboardUI : MonoBehaviour
     private PanelRenderer panelRenderer;
     private VisualElement scoreboardPanel;
     private ScrollView list;
+
+    // Victoria
+    private VisualElement victoryPanel;
+    private Label victoryWinnerLabel;
+    private Button victoryExitButton;
+    private bool victoriaMostrada;
 
     private NetworkList<PlayerEntry> suscritoA;
 
@@ -33,6 +40,18 @@ public class ScoreboardUI : MonoBehaviour
         scoreboardPanel = root.Q<VisualElement>("ScoreboardPanel");
         list = root.Q<ScrollView>("ScoreboardList");
 
+        victoryPanel = root.Q<VisualElement>("VictoryPanel");
+        victoryWinnerLabel = root.Q<Label>("VictoryWinnerLabel");
+        victoryExitButton = root.Q<Button>("VictoryExitButton");
+
+        if (victoryExitButton != null)
+        {
+            victoryExitButton.clicked -= SalirAlMenu;
+            victoryExitButton.clicked += SalirAlMenu;
+        }
+        if (victoryPanel != null) victoryPanel.style.display = DisplayStyle.None;
+        victoriaMostrada = false;
+
         if (scoreboardPanel == null || list == null)
         {
             Debug.LogError("ScoreboardUI: no encontré ScoreboardPanel o ScoreboardList en el UXML.");
@@ -44,6 +63,12 @@ public class ScoreboardUI : MonoBehaviour
 
     void Update()
     {
+        if (victoriaMostrada)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
         if (scoreboardPanel == null) return;
 
         // Suscribirse a la lista cuando ScoreboardState ya existe
@@ -52,6 +77,11 @@ public class ScoreboardUI : MonoBehaviour
             suscritoA = ScoreboardState.Instance.Players;
             suscritoA.OnListChanged += OnPlayersChanged;
         }
+
+        // Condición de victoria
+        var estado = ScoreboardState.Instance;
+        if (!victoriaMostrada && estado != null && estado.IsSpawned && estado.Terminada.Value)
+            MostrarVictoria(estado.Ganador.Value.ToString());
 
         bool tabAbajo = false, tabSoltado = false;
 
@@ -75,6 +105,29 @@ public class ScoreboardUI : MonoBehaviour
 
         if (tabAbajo) Mostrar();
         if (tabSoltado) Ocultar();
+    }
+
+    private void MostrarVictoria(string ganador)
+    {
+        victoriaMostrada = true;
+        if (victoryPanel == null) return;
+
+        victoryWinnerLabel.text = $"Ganó {ganador}";
+        victoryPanel.style.display = DisplayStyle.Flex;
+
+        // Liberar el cursor para poder tocar el botón
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        // Congela el giro de cámara (es el mismo flag que se usa al morir)
+        PlayerCamera.DuenoMuerto = true;
+    }
+
+    private void SalirAlMenu()
+    {
+        // Reutiliza la salida de tu menú de pausa (desconecta y vuelve al Menu)
+        var pausa = GetComponent<PauseMenuUI>();
+        if (pausa != null) pausa.Desconectar();
     }
 
     private void Desuscribir()
@@ -116,7 +169,6 @@ public class ScoreboardUI : MonoBehaviour
         ulong localId = NetworkManager.Singleton.LocalClientId;
         var jugadores = ScoreboardState.Instance.Players;
 
-        // Copiar a una List normal para poder ordenar
         var copia = new List<PlayerEntry>();
         for (int i = 0; i < jugadores.Count; i++)
             copia.Add(jugadores[i]);

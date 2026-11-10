@@ -34,6 +34,11 @@
         </ui:VisualElement>
         <ui:ScrollView name="ScoreboardList"/>
     </ui:VisualElement>
+    <ui:VisualElement name="VictoryPanel" class="victory" style="display: none;">
+        <ui:Label text="¡PARTIDA TERMINADA!" class="victory-title" />
+        <ui:Label name="VictoryWinnerLabel" text="" class="victory-winner" />
+        <ui:Button name="VictoryExitButton" text="VOLVER AL MENÚ" class="room-btn" />
+    </ui:VisualElement>
     <ui:VisualElement name="WaitingRoomPanel" class="room" style="flex-grow: 1; display: none;">
         <ui:VisualElement class="room-code-box" style="flex-grow: 1;">
             <ui:Label text="Código: ------" name="RoomCodeLabel" class="room-code"/>

@@ -40,8 +40,11 @@ public class PlayerCamera : MonoBehaviour
         posLocalOriginal = transform.localPosition;
         CamaraLibre = false;
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        if (!PlayerNetworkMovement.PartidaTerminada)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     void OnDestroy()
@@ -51,9 +54,9 @@ public class PlayerCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        if (DuenoMuerto)
+        if (DuenoMuerto || PlayerNetworkMovement.PartidaTerminada)
         {
-            // si muere en camara libre, volver a la normal
+            // si muere (o termina la partida) en camara libre, volver a la normal
             if (CamaraLibre) SalirCamaraLibre();
             return;
         }

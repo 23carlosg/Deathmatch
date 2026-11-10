@@ -65,7 +65,7 @@ public class PlayerMovement : NetworkBehaviour
     public void Mover()
     {
         bool enSuelo = controller.isGrounded;
-        bool libre = PlayerCamera.CamaraLibre;
+        bool libre = PlayerNetworkMovement.InputBloqueado;
 
         coyoteTimer = enSuelo ? coyoteTime : coyoteTimer - Time.deltaTime;
         if (!libre && Keyboard.current.spaceKey.wasPressedThisFrame) bufferSaltoTimer = bufferSalto;

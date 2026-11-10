@@ -72,8 +72,11 @@ public class PlayerHealth : NetworkBehaviour
             }
             else
             {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                if (!PlayerNetworkMovement.PartidaTerminada)
+                    {
+                        Cursor.lockState = CursorLockMode.Locked;
+                        Cursor.visible = false;
+                    }
             }
         }
 

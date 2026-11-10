@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 /// Coordinador del jugador. Ya no contiene la logica: la reparte en componentes que viven
 /// en el MISMO GameObject y los llama en orden desde Update.
 ///
-///   PlayerMotor      movimiento, salto, gravedad, animacion de caminar
+///   PlayerMovement      movimiento, salto, gravedad, animacion de caminar
 ///   PlayerWeapons    armas, disparo, recarga, laser, destello, sonido
 ///   PlayerHealth     salud, muerte, revivir, kills
 ///   PlayerCameraRig  camara tercera persona, colision con paredes, fundido del cuerpo
@@ -44,6 +44,12 @@ public class PlayerNetworkMovement : NetworkBehaviour
     Crosshair mira;
     bool esLocal = true;
     bool camaraLibreAnterior;
+
+    public static bool PartidaTerminada => 
+        ScoreboardState.Instance != null && ScoreboardState.Instance.IsSpawned 
+        && ScoreboardState.Instance.Terminada.Value;
+
+    public static bool InputBloqueado => PlayerCamera.CamaraLibre || PartidaTerminada;
 
     // ------------------------- ACCESO PARA LOS COMPONENTES -------------------------
 
@@ -209,7 +215,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
             return;
         }
 
-        bool libre = PlayerCamera.CamaraLibre;
+        bool libre = InputBloqueado;
 
         if (!libre)
         {
@@ -243,7 +249,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
 
     void ActualizarMiraSegunCamaraLibre()
     {
-        bool libre = PlayerCamera.CamaraLibre;
+        bool libre = InputBloqueado;
         if (libre == camaraLibreAnterior) return;
         camaraLibreAnterior = libre;
         if (mira != null && !Muerto) mira.Mostrar(!libre);

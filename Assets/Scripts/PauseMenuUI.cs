@@ -125,7 +125,7 @@ public class PauseMenuUI : MonoBehaviour
         Cursor.visible = false;
     }
 
-    private void Desconectar()
+    public void Desconectar()
     {
         if (saliendo) return;
         saliendo = true;

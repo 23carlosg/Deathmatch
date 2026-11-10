@@ -2,6 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using Cursor = UnityEngine.Cursor;
 
 public struct PlayerEntry : INetworkSerializable, IEquatable<PlayerEntry>
 {
@@ -33,6 +34,11 @@ public class ScoreboardState : NetworkBehaviour
 
     // Esta lista se sincroniza sola del servidor a todos los clientes
     public NetworkList<PlayerEntry> Players;
+
+    public const int KillsParaGanar = 10;
+
+    public NetworkVariable<bool> Terminada = new NetworkVariable<bool>(false);
+    public NetworkVariable<FixedString64Bytes> Ganador = new NetworkVariable<FixedString64Bytes>();
 
     void Awake()
     {
@@ -105,7 +111,7 @@ public class ScoreboardState : NetworkBehaviour
     // Llamar solo desde el servidor cuando un jugador mata a otro
     public void RegistrarKill(ulong killerId, ulong victimId)
     {
-        if (!IsServer) return;
+        if (!IsServer || Terminada.Value) return;
 
         for (int i = 0; i < Players.Count; i++)
         {
@@ -115,6 +121,12 @@ public class ScoreboardState : NetworkBehaviour
             {
                 p.Score += 1;
                 Players[i] = p;
+
+                if (p.Score >= KillsParaGanar && !Terminada.Value)
+                    {
+                        Ganador.Value = p.Name;
+                        Terminada.Value = true;
+                    }
             }
             else if (p.ClientId == victimId)
             {

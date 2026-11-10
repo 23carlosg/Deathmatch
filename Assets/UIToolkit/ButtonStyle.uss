@@ -20,3 +20,17 @@
 .ButtonStyle:hover {
     scale: 1.1 1.1;
 }
+
+.victory {
+    position: absolute;
+    left: 50%; top: 40%;
+    width: 500px;
+    translate: -50% 0;
+    padding: 24px;
+    background-color: rgb(20, 24, 36);
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: #ffd84a;
+}
+.victory-title { font-size: 30px; color: white; -unity-text-align: middle-center; margin-bottom: 10px; }
+.victory-winner { font-size: 26px; color: #ffd84a; -unity-font-style: bold; -unity-text-align: middle-center; margin-bottom: 16px; }
