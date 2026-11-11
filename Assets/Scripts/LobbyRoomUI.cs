@@ -83,6 +83,17 @@ public class LobbyRoomUI : MonoBehaviour
         var cliente = root?.Q<Button>("IniciarClienteButton");
         if (host != null) host.SetEnabled(true);
         if (cliente != null) { cliente.SetEnabled(true); cliente.pickingMode = PickingMode.Position; }
+
+        if (!string.IsNullOrEmpty(NetworkLobbyManager.MensajeError))
+        {
+            var campoNombre = root?.Q<TextField>("PlayerNameInput");
+            if (campoNombre != null)
+            {
+                campoNombre.value = "";
+                campoNombre.textEdition.placeholder = NetworkLobbyManager.MensajeError;
+            }
+            NetworkLobbyManager.MensajeError = "";
+        }
     }
 
     void Update()

@@ -198,9 +198,23 @@ public class MainMenuUI : MonoBehaviour
 
         if (!ok)
         {
-            Debug.LogWarning("[UI] No se pudo unir. Revisá el código e intentá de nuevo.");
-            joinCodeInput.value = "";
-            joinCodeInput.textEdition.placeholder = "Esta mal ingrese el codigo correcto";
+            string motivo = NetworkLobbyManager.MensajeError;
+            NetworkLobbyManager.MensajeError = "";
+
+            if (!string.IsNullOrEmpty(motivo) && motivo.Contains("nombre"))
+            {
+                // Nombre repetido: se limpia el nombre, el código se conserva
+                if (playerNameInput != null)
+                {
+                    playerNameInput.value = "";
+                    playerNameInput.textEdition.placeholder = motivo;
+                }
+            }
+            else
+            {
+                joinCodeInput.value = "";
+                joinCodeInput.textEdition.placeholder = "Esta mal ingrese el codigo correcto";
+            }
         }
         else
         {

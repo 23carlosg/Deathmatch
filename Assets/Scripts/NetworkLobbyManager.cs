@@ -38,6 +38,7 @@ public class NetworkLobbyManager : MonoBehaviour
 
     // ---------------- NOMBRES ----------------
     public static string NombreLocal { get; private set; } = "";
+    public static string MensajeError { get; set; } = "";
     static readonly Dictionary<ulong, string> nombres = new Dictionary<ulong, string>();
 
     public static string LimpiarNombre(string n)
@@ -163,9 +164,19 @@ public class NetworkLobbyManager : MonoBehaviour
 
     void AprobarConexion(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-        // Leer el nombre que mandó el jugador al conectarse
         string nombreRecibido = (request.Payload != null && request.Payload.Length > 0)
             ? LimpiarNombre(Encoding.UTF8.GetString(request.Payload)) : "";
+
+        // Rechazar si otro jugador de la sala ya usa ese nombre (sin importar mayúsculas)
+        if (!string.IsNullOrEmpty(nombreRecibido) && NombreEnUso(nombreRecibido, request.ClientNetworkId))
+        {
+            response.Approved = false;
+            response.CreatePlayerObject = false;
+            response.Reason = "NOMBRE_REPETIDO";
+            response.Pending = false;
+            return;
+        }
+
         if (!string.IsNullOrEmpty(nombreRecibido))
             nombres[request.ClientNetworkId] = nombreRecibido;
 
@@ -174,6 +185,19 @@ public class NetworkLobbyManager : MonoBehaviour
         response.Position = SiguientePosicionDeSpawn();
         response.Rotation = Quaternion.identity;
         response.Pending = false;
+    }
+
+    bool NombreEnUso(string nombre, ulong idSolicitante)
+    {
+        var nm = NetworkManager.Singleton;
+        foreach (var par in nombres)
+        {
+            if (par.Key == idSolicitante) continue;
+            bool conectado = par.Key == NetworkManager.ServerClientId || (nm != null && nm.ConnectedClients.ContainsKey(par.Key));
+            if (!conectado) continue;
+            if (string.Equals(par.Value, nombre, System.StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
     }
 
     Vector3 PuntoCentralDelPiso()
@@ -330,23 +354,46 @@ public class NetworkLobbyManager : MonoBehaviour
             var relayServerData = AllocationUtils.ToRelayServerData(allocation, "dtls");
             transporte.SetRelayServerData(relayServerData);
 
-            // El nombre viaja en los datos de conexión
+            // El nombre viaja en los datos de conexion
             NetworkManager.Singleton.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(NombreLocal);
 
             if (NetworkManager.Singleton.StartClient())
             {
-                JoinCodeActual = joinCode;
+                MensajeError = "";
+
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= AlTerminarDeCargarEscena;
                 NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += AlTerminarDeCargarEscena;
 
-                // Si el cliente ya tiene cargada una escena (Menu, ArenaFondo), no la recarga.
+                // Si el cliente ya tiene cargada una escena, no la recarga.
                 NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = (indice, nombreEscena, modo) =>
                 {
                     var escena = UnityEngine.SceneManagement.SceneManager.GetSceneByName(nombreEscena);
                     if (escena.isLoaded && nombreEscena != escenaDeJuego) return false;
                     return true;
                 };
-                return true;
+
+                // Esperar a que el servidor apruebe o rechace la conexion
+                var nm = NetworkManager.Singleton;
+                float esperado = 0f;
+                while (esperado < 15f && nm.IsListening && !nm.IsConnectedClient)
+                {
+                    await Task.Yield();
+                    esperado += Time.unscaledDeltaTime;
+                }
+
+                if (nm.IsConnectedClient)
+                {
+                    JoinCodeActual = joinCode;
+                    return true;
+                }
+
+                if (nm.DisconnectReason == "NOMBRE_REPETIDO")
+                    MensajeError = "Ese nombre ya está en uso.";
+                else if (string.IsNullOrEmpty(MensajeError))
+                    MensajeError = "No se pudo entrar a la sala.";
+
+                if (nm.IsListening) nm.Shutdown();
+                return false;
             }
 
             Debug.LogError("[Lobby] ERROR: no se pudo conectar");
