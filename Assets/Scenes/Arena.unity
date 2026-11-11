@@ -15616,7 +15616,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 125588, guid: ea798cfb4939d4441b95d1bd39d0767f, type: 3}
       propertyPath: m_TagString
-      value: Player
+      value: Untagged
       objectReference: {fileID: 0}
     - target: {fileID: 451040, guid: ea798cfb4939d4441b95d1bd39d0767f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -15673,6 +15673,14 @@ PrefabInstance:
     - target: {fileID: 598743577356598779, guid: ea798cfb4939d4441b95d1bd39d0767f, type: 3}
       propertyPath: InScenePlacedSourceGlobalObjectIdHash
       value: 4166588424
+      objectReference: {fileID: 0}
+    - target: {fileID: 4099255069952549740, guid: ea798cfb4939d4441b95d1bd39d0767f, type: 3}
+      propertyPath: validTags.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4099255069952549740, guid: ea798cfb4939d4441b95d1bd39d0767f, type: 3}
+      propertyPath: 'validTags.Array.data[2]'
+      value: Wheelbot
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -22134,7 +22142,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7000000000000000001, guid: e77c90662cb838040833ba082fd4335b, type: 3}
       propertyPath: m_TagString
-      value: Player
+      value: Wheelbot
       objectReference: {fileID: 0}
     - target: {fileID: 7000000000000000002, guid: e77c90662cb838040833ba082fd4335b, type: 3}
       propertyPath: m_LocalPosition.x
