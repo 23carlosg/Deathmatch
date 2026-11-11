@@ -1,11 +1,10 @@
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class OpenDoor : NetworkBehaviour
 {
     [SerializeField] private Animator animator;
-    [SerializeField] private string playerTag = "Player";
+    [SerializeField] private string[] validTags = { "Player", "Wheelbot"};
 
     private static readonly int CharacterNearby = Animator.StringToHash("character_nearby");
 
@@ -15,7 +14,8 @@ public class OpenDoor : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
-    private bool localPlayerInRange;
+    // Cantidad de personajes dentro del trigger (solo se usa en el servidor)
+    private int occupants;
 
     private void Awake()
     {
@@ -39,37 +39,30 @@ public class OpenDoor : NetworkBehaviour
         animator.SetBool(CharacterNearby, current);
     }
 
-    private void Update()
-    {
-        if (!localPlayerInRange) return;
-
-        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
-            ToggleServerRpc();
-    }
-
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    private void ToggleServerRpc()
-    {
-        isOpen.Value = !isOpen.Value;
-    }
-
     private void OnTriggerEnter(Collider other)
     {
-        if (IsLocalPlayerDoor(other))
-            localPlayerInRange = true;
+        if (!IsServer || !IsValidCharacter(other)) return;
+
+        occupants++;
+        isOpen.Value = true;
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (IsLocalPlayerDoor(other))
-            localPlayerInRange = false;
+        if (!IsServer || !IsValidCharacter(other)) return;
+
+        occupants = Mathf.Max(0, occupants - 1);
+        if (occupants == 0)
+            isOpen.Value = false;
     }
 
-    // Solo cuenta MI jugador, no los remotos
-    private bool IsLocalPlayerDoor(Collider other)
+    private bool IsValidCharacter(Collider other)
     {
-        if (!other.CompareTag(playerTag)) return false;
-        var netObj = other.GetComponentInParent<NetworkObject>();
-        return netObj != null && netObj.IsOwner;
+        foreach (var tag in validTags)
+        {
+            if (other.CompareTag(tag))
+                return true;
+        }
+        return false;
     }
 }
