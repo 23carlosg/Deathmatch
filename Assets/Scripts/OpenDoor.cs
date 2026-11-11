@@ -4,7 +4,7 @@ using UnityEngine;
 public class OpenDoor : NetworkBehaviour
 {
     [SerializeField] private Animator animator;
-    [SerializeField] private string[] validTags = { "Player"};
+    [SerializeField] private string[] validTags = { "Player", "Wheelbot"};
 
     private static readonly int CharacterNearby = Animator.StringToHash("character_nearby");
 
