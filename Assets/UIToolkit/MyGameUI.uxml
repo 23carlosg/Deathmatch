@@ -2,6 +2,7 @@
     <Style src="project://database/Assets/UIToolkit/ButtonStyle.uss?fileID=7433441132597879392&amp;guid=1f1157271424e0f42aeab47b812abc4c&amp;type=3#ButtonStyle"/>
     <Style src="project://database/Assets/UIToolkit/ScoreboardStyle.uss?fileID=7433441132597879392&amp;guid=b9f435f6ffe21e241b7a51da9b2b4d4b&amp;type=3#ScoreboardStyle"/>
     <Style src="project://database/Assets/UIToolkit/WaitingRoomPanel.uss?fileID=7433441132597879392&amp;guid=924c211dffe82c9478752bfb9f7bebe4&amp;type=3#WaitingRoomPanel"/>
+    <Style src="project://database/Assets/UIToolkit/Pickup.uss?fileID=7433441132597879392&amp;guid=a970eeb4421fb56409d5443007c69868&amp;type=3#Pickup"/>
     <ui:VisualElement name="MainMenuPanel" style="flex-grow: 1; background-image: none; display: none; overflow: visible;">
         <ui:Label text="Orbital Arena" name="Menu" style="font-size: 125px; -unity-text-align: upper-center; color: rgb(255, 255, 255); -unity-font-style: bold; -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 5px 5px 5px rgb(0, 0, 0); top: 0; margin-top: 100px; background-image: none; -unity-font-definition: url(&quot;project://database/Assets/fonts/earthorbiter.ttf?fileID=12800000&amp;guid=ee5f36273e3ba294786d963b23b2ce04&amp;type=3#earthorbiter&quot;);"/>
         <ui:Button text="PLAY" name="PlayButton" class="ButtonStyle" style="top: 150px;"/>
@@ -35,9 +36,9 @@
         <ui:ScrollView name="ScoreboardList"/>
     </ui:VisualElement>
     <ui:VisualElement name="VictoryPanel" class="victory" style="display: none;">
-        <ui:Label text="¡PARTIDA TERMINADA!" class="victory-title" />
-        <ui:Label name="VictoryWinnerLabel" text="" class="victory-winner" />
-        <ui:Button name="VictoryExitButton" text="VOLVER AL MENÚ" class="room-btn" />
+        <ui:Label text="¡PARTIDA TERMINADA!" class="victory-title"/>
+        <ui:Label name="VictoryWinnerLabel" text="" class="victory-winner"/>
+        <ui:Button name="VictoryExitButton" text="VOLVER AL MENÚ" class="room-btn"/>
     </ui:VisualElement>
     <ui:VisualElement name="WaitingRoomPanel" class="room" style="flex-grow: 1; display: none;">
         <ui:VisualElement class="room-code-box" style="flex-grow: 1;">
@@ -51,5 +52,9 @@
         <ui:Button text="INICIAR PARTIDA" name="StartGameButton" class="room-btn room-start"/>
         <ui:Button text="LISTO" name="ReadyButton" class="room-btn room-ready"/>
         <ui:Button text="Salir" name="LeaveRoomButton" class="room-btn"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="Pickup" picking-mode="Ignore" class="pickup-prompt" style="display: none;">
+        <ui:Label name="PickupKey" text="E" class="pickup-key"/>
+        <ui:Label name="PickupText" text="Recoger arma" class="pickup-text"/>
     </ui:VisualElement>
 </ui:UXML>
