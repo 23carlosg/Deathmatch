@@ -3,6 +3,7 @@
     <Style src="project://database/Assets/UIToolkit/ScoreboardStyle.uss?fileID=7433441132597879392&amp;guid=b9f435f6ffe21e241b7a51da9b2b4d4b&amp;type=3#ScoreboardStyle"/>
     <Style src="project://database/Assets/UIToolkit/WaitingRoomPanel.uss?fileID=7433441132597879392&amp;guid=924c211dffe82c9478752bfb9f7bebe4&amp;type=3#WaitingRoomPanel"/>
     <Style src="project://database/Assets/UIToolkit/Pickup.uss?fileID=7433441132597879392&amp;guid=a970eeb4421fb56409d5443007c69868&amp;type=3#Pickup"/>
+    <Style src="project://database/Assets/UIToolkit/ControlStyle.uss?fileID=7433441132597879392&amp;guid=0000592c3a2b2894a8e54c1487836a9b&amp;type=3#ControlStyle"/>
     <ui:VisualElement name="MainMenuPanel" style="flex-grow: 1; background-image: none; display: none; overflow: visible;">
         <ui:Label text="Orbital Arena" name="Menu" style="font-size: 125px; -unity-text-align: upper-center; color: rgb(255, 255, 255); -unity-font-style: bold; -unity-text-outline-width: 4px; -unity-text-outline-color: rgb(0, 0, 0); text-shadow: 5px 5px 5px rgb(0, 0, 0); top: 0; margin-top: 100px; background-image: none; -unity-font-definition: url(&quot;project://database/Assets/fonts/earthorbiter.ttf?fileID=12800000&amp;guid=ee5f36273e3ba294786d963b23b2ce04&amp;type=3#earthorbiter&quot;);"/>
         <ui:Button text="PLAY" name="PlayButton" class="ButtonStyle" style="top: 150px; -unity-font-definition: url(&quot;project://database/Assets/fonts/earthorbiter.ttf?fileID=12800000&amp;guid=ee5f36273e3ba294786d963b23b2ce04&amp;type=3#earthorbiter&quot;);"/>
@@ -26,6 +27,44 @@
         <ui:Label text="CODIGO" name="PauseJoinCodeLabel" style="font-size: 40px; width: 391px; background-color: rgba(255, 255, 255, 0.498); display: flex; -unity-font-style: bold;"/>
         <ui:Button text="REANUDAR" name="ReanudarButton" class="ButtonStyle" style="top: 316px; -unity-font-definition: url(&quot;project://database/Assets/fonts/earthorbiter.ttf?fileID=12800000&amp;guid=ee5f36273e3ba294786d963b23b2ce04&amp;type=3#earthorbiter&quot;);"/>
         <ui:Button text="DESCONECTAR" name="DisconnectButton" class="ButtonStyle" style="top: 427px; -unity-font-definition: url(&quot;project://database/Assets/fonts/earthorbiter.ttf?fileID=12800000&amp;guid=ee5f36273e3ba294786d963b23b2ce04&amp;type=3#earthorbiter&quot;);"/>
+        <ui:VisualElement name="ControlsPanel" picking-mode="Ignore" class="controls">
+            <ui:Label text="CONTROLES" class="controls-title"/>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="W A S D" class="control-key"/>
+                <ui:Label text="Moverse" class="control-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="ESPACIO" class="control-key"/>
+                <ui:Label text="Saltar" class="control-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="SHIFT" class="control-key"/>
+                <ui:Label text="Correr" class="control-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="E" class="control-key"/>
+                <ui:Label text="Recoger armas" class="control-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="CLICK IZQ." class="control-key"/>
+                <ui:Label text="Disparar" class="control-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="CLICK DER." class="control-key"/>
+                <ui:Label text="Apuntar" class="control-text"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="Q" class="control-key"/>
+                <ui:VisualElement class="control-col">
+                    <ui:Label text="Invisibilidad" class="control-text"/>
+                    <ui:Label text="Solo con racha de 3+ kills" class="control-note"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="controls-row">
+                <ui:Label text="TAB" class="control-key"/>
+                <ui:Label text="Tabla de posiciones" class="control-text"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
     <ui:VisualElement name="ScoreboardPanel" class="scoreboard" style="flex-grow: 1; display: none; background-color: rgba(20, 24, 36, 0.863); border-top-width: 2px; border-left-color: rgb(90, 110, 160); border-right-color: rgb(90, 110, 160); border-top-color: rgb(90, 110, 160); border-bottom-color: rgb(90, 110, 160); border-bottom-width: 2px; border-right-width: 2px; border-left-width: 2px;">
         <ui:VisualElement class="sb-row sb-header" style="display: flex;">
