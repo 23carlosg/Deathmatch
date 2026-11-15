@@ -34,6 +34,9 @@ public class NetworkLobbyManager : MonoBehaviour
     int siguienteSpawn = 0;
     Vector3[] ordenSpawnBarajado;
 
+    // Puntos asignados hace poco, para que dos respawns seguidos no elijan el mismo
+    static readonly List<(Vector3 pos, float hasta)> reservasRespawn = new List<(Vector3, float)>();
+
     public static string JoinCodeActual { get; private set; } = "";
 
     // ---------------- NOMBRES ----------------
@@ -133,13 +136,22 @@ public class NetworkLobbyManager : MonoBehaviour
             return;
         }
 
+        reservasRespawn.Clear();
+
         foreach (ulong id in nm.ConnectedClientsIds)
         {
             if (nm.ConnectedClients.TryGetValue(id, out var cliente) && cliente.PlayerObject != null)
                 continue;
 
-            GameObject jugador = Instantiate(prefab, SiguientePosicionDeSpawn(), Quaternion.identity);
+            Vector3 posSpawn = SiguientePosicionDeSpawn();
+            Debug.Log($"[Lobby] Spawn de cliente {id}: {posSpawn}");
+
+            GameObject jugador = Instantiate(prefab, posSpawn, Quaternion.identity);
             jugador.GetComponent<NetworkObject>().SpawnAsPlayerObject(id, true);
+
+            // Refuerzo: el dueño reposiciona a su jugador (apaga el CharacterController un instante)
+            var salud = jugador.GetComponent<PlayerHealth>();
+            if (salud != null) salud.PosicionarEnServidor(posSpawn);
         }
     }
 
@@ -263,6 +275,7 @@ public class NetworkLobbyManager : MonoBehaviour
         ValidarPuntos();
         BarajarPuntosDeSpawn();
         siguienteSpawn = 0;
+        reservasRespawn.Clear();
         JoinCodeActual = "";
 
         try
@@ -432,12 +445,43 @@ public class NetworkLobbyManager : MonoBehaviour
         return transporte;
     }
 
+    // Elige entre los 3 puntos mas lejos de los jugadores vivos y de los respawns recientes
     public static Vector3 ObtenerPuntoDeRespawn()
     {
-        if (instancia == null || instancia.ordenSpawnBarajado == null || instancia.ordenSpawnBarajado.Length == 0)
-            return instancia != null ? instancia.PuntoCentralDelPiso() : Vector3.zero;
+        if (instancia == null) return Vector3.zero;
+        var puntos = instancia.ordenSpawnBarajado;
+        if (puntos == null || puntos.Length == 0) return instancia.PuntoCentralDelPiso();
 
-        int indice = Random.Range(0, instancia.ordenSpawnBarajado.Length);
-        return instancia.ordenSpawnBarajado[indice];
+        reservasRespawn.RemoveAll(r => Time.time > r.hasta);
+
+        var ocupadas = new List<Vector3>();
+        var nm = NetworkManager.Singleton;
+        if (nm != null)
+        {
+            foreach (var c in nm.ConnectedClients.Values)
+            {
+                if (c.PlayerObject == null) continue;
+                var salud = c.PlayerObject.GetComponent<PlayerHealth>();
+                if (salud != null && salud.Salud <= 0f) continue;   // los muertos no cuentan
+                ocupadas.Add(c.PlayerObject.transform.position);
+            }
+        }
+        foreach (var r in reservasRespawn) ocupadas.Add(r.pos);
+
+        var puntaje = new List<(int i, float dist)>();
+        for (int i = 0; i < puntos.Length; i++)
+        {
+            float min = float.MaxValue;
+            foreach (var o in ocupadas)
+                min = Mathf.Min(min, Vector3.Distance(puntos[i], o));
+            puntaje.Add((i, min));
+        }
+        puntaje.Sort((a, b) => b.dist.CompareTo(a.dist));
+
+        int top = Mathf.Min(3, puntaje.Count);
+        Vector3 elegido = puntos[puntaje[Random.Range(0, top)].i];
+
+        reservasRespawn.Add((elegido, Time.time + 3f));
+        return elegido;
     }
 }

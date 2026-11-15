@@ -1,5 +1,6 @@
 using System.Collections;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 /// <summary>
@@ -37,8 +38,6 @@ public class PlayerHealth : NetworkBehaviour
 
     // ------------------------- ESTADO (todas las maquinas) -------------------------
 
-    // Aplica en cada maquina el estado que vino del servidor (vivo/muerto). Se llama cada frame:
-    // si el valor no cambio, no hace nada.
     public void Revisar()
     {
         bool estaMuerto = redSalud.Value <= 0f;
@@ -54,7 +53,6 @@ public class PlayerHealth : NetworkBehaviour
         {
             if (Muerto)
             {
-                // Sacar al Animator del salto/aterrizaje para que pueda entrar a la animación de muerte
                 animator.SetBool("isGrounded", true);
                 animator.SetFloat("VelX", 0f);
                 animator.SetFloat("VelY", 0f);
@@ -73,10 +71,10 @@ public class PlayerHealth : NetworkBehaviour
             else
             {
                 if (!PlayerNetworkMovement.PartidaTerminada)
-                    {
-                        Cursor.lockState = CursorLockMode.Locked;
-                        Cursor.visible = false;
-                    }
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
             }
         }
 
@@ -85,7 +83,6 @@ public class PlayerHealth : NetworkBehaviour
 
     // ------------------------- DAÑO (servidor) -------------------------
 
-    // Punto de entrada clasico (misma firma que el Player viejo) para sistemas externos de daño
     public void TakeDamage(float cantidad)
     {
         RecibirDanioServerRpc(cantidad);
@@ -94,7 +91,6 @@ public class PlayerHealth : NetworkBehaviour
     [ServerRpc]
     void RecibirDanioServerRpc(float cantidad)
     {
-        // Sin atacante conocido; se usa el propio id (RegistrarKill ignora suicidios)
         RecibirDanioEnServidor(cantidad, OwnerClientId);
     }
 
@@ -110,8 +106,7 @@ public class PlayerHealth : NetworkBehaviour
 
             if (ScoreboardState.Instance != null)
                 ScoreboardState.Instance.RegistrarKill(atacanteId, OwnerClientId);
-            
-            // Powerup por racha 
+
             var propio = GetComponent<PlayerPowerup>();
             if (propio != null) propio.RegistrarMuerte();
 
@@ -127,7 +122,6 @@ public class PlayerHealth : NetworkBehaviour
         }
     }
 
-    //Recuperacion de salud
     public void Curar(float cantidad)
     {
         if (!IsServer || Muerto || redSalud.Value <= 0f) return;
@@ -138,14 +132,12 @@ public class PlayerHealth : NetworkBehaviour
 
     // ------------------------- MORIR / REVIVIR -------------------------
 
-    // Muerte pidiendo el daño por el camino de red (lo aplica el servidor)
     public void Morir()
     {
         if (Muerto) return;
         RecibirDanioServerRpc(9999f);
     }
 
-    // Revive por red: el servidor restaura la salud y reposiciona
     public void Revivir()
     {
         if (!Muerto) return;
@@ -165,7 +157,6 @@ public class PlayerHealth : NetworkBehaviour
         reviviendoAutomaticamente = false;
     }
 
-    // Lógica real de revivir; la puede llamar el RPC (revivir manual) o la corrutina (revivir automático)
     void RevivirEnServidor()
     {
         redSalud.Value = saludMaxima;
@@ -176,7 +167,38 @@ public class PlayerHealth : NetworkBehaviour
     [ClientRpc]
     void RevivirClientRpc(Vector3 posicion)
     {
-        transform.position = posicion;
+        Teletransportar(posicion);
         jugador.Movement.ReiniciarVelocidades();
+    }
+
+    // Lo llama el servidor al crear al jugador, para asegurar la posicion inicial
+    public void PosicionarEnServidor(Vector3 posicion)
+    {
+        if (!IsServer) return;
+        PosicionarClientRpc(posicion);
+    }
+
+    [ClientRpc]
+    void PosicionarClientRpc(Vector3 posicion)
+    {
+        Teletransportar(posicion);
+        jugador.Movement.ReiniciarVelocidades();
+    }
+
+    // El CharacterController pisa transform.position si esta activo, por eso se apaga un instante.
+    // Con NetworkTransform de autoridad del cliente, Teleport evita que el salto se interpole.
+    void Teletransportar(Vector3 posicion)
+    {
+        CharacterController cc = jugador.Controller;
+        bool estabaActivo = cc != null && cc.enabled;
+        if (cc != null) cc.enabled = false;
+
+        transform.position = posicion;
+
+        var nt = GetComponent<NetworkTransform>();
+        if (nt != null && nt.CanCommitToTransform)
+            nt.Teleport(posicion, transform.rotation, transform.localScale);
+
+        if (cc != null) cc.enabled = estabaActivo;
     }
 }
