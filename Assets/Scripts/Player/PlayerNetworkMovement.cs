@@ -49,7 +49,7 @@ public class PlayerNetworkMovement : NetworkBehaviour
         ScoreboardState.Instance != null && ScoreboardState.Instance.IsSpawned 
         && ScoreboardState.Instance.Terminada.Value;
 
-    public static bool InputBloqueado => PlayerCamera.CamaraLibre || PartidaTerminada;
+    public static bool InputBloqueado => PartidaTerminada;
 
     // ------------------------- ACCESO PARA LOS COMPONENTES -------------------------
 
