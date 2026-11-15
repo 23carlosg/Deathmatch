@@ -11,6 +11,7 @@ public struct PlayerEntry : INetworkSerializable, IEquatable<PlayerEntry>
     public int Score;   // kills del jugador
     public int Deaths;  // veces que murió
     public bool Listo;  // listo en la sala de espera
+    public int Ping;    // ms
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
@@ -19,12 +20,14 @@ public struct PlayerEntry : INetworkSerializable, IEquatable<PlayerEntry>
         serializer.SerializeValue(ref Score);
         serializer.SerializeValue(ref Deaths);
         serializer.SerializeValue(ref Listo);
+        serializer.SerializeValue(ref Ping);
     }
 
     public bool Equals(PlayerEntry other)
     {
         return ClientId == other.ClientId && Name == other.Name
-            && Score == other.Score && Deaths == other.Deaths && Listo == other.Listo;
+            && Score == other.Score && Deaths == other.Deaths
+            && Listo == other.Listo && Ping == other.Ping;
     }
 }
 
@@ -131,6 +134,41 @@ public class ScoreboardState : NetworkBehaviour
             else if (p.ClientId == victimId)
             {
                 p.Deaths += 1;
+                Players[i] = p;
+            }
+        }
+    }
+
+    // Ping
+    float proximoPing;
+
+    void Update()
+    {
+        if (!IsServer || !IsSpawned) return;
+        if (Time.unscaledTime < proximoPing) return;
+        proximoPing = Time.unscaledTime + 1f;   // una vez por segundo
+        ActualizarPings();
+    }
+
+    void ActualizarPings()
+    {
+        var utp = NetworkManager.NetworkConfig.NetworkTransport
+                as Unity.Netcode.Transports.UTP.UnityTransport;
+        if (utp == null) return;
+
+        for (int i = 0; i < Players.Count; i++)
+        {
+            PlayerEntry p = Players[i];
+
+            // El host no tiene latencia contra sí mismo
+            int ping = p.ClientId == NetworkManager.ServerClientId
+                ? 0
+                : (int)utp.GetCurrentRtt(p.ClientId);
+
+            // Solo se escribe si cambió bastante, para no saturar la red
+            if (Mathf.Abs(ping - p.Ping) >= 5)
+            {
+                p.Ping = ping;
                 Players[i] = p;
             }
         }

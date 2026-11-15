@@ -71,6 +71,7 @@
             <ui:Label text="Jugador" class="sb-name"/>
             <ui:Label text="Kills" class="sb-score"/>
             <ui:Label text="Deaths" class="sb-score"/>
+            <ui:Label text="Ping" class="sb-score"/>
         </ui:VisualElement>
         <ui:ScrollView name="ScoreboardList"/>
     </ui:VisualElement>

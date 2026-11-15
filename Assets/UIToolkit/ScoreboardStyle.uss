@@ -12,3 +12,7 @@
 .sb-name { flex-grow: 1; color: white; font-size: 18px; }
 .sb-score { width: 100px; color: white; font-size: 18px; -unity-text-align: middle-right; }
 .sb-local .sb-name, .sb-local .sb-score { color: #ffd84a; }
+
+.ping-bueno { color: #5cff8a; }
+.ping-medio { color: #ffd84a; }
+.ping-malo  { color: #ff5c5c; }

@@ -190,9 +190,14 @@ public class ScoreboardUI : MonoBehaviour
             var muertes = new Label(p.Deaths.ToString());
             muertes.AddToClassList("sb-score");
 
+            var ping = new Label(p.Ping + " ms");
+            ping.AddToClassList("sb-score");
+            ping.AddToClassList(p.Ping < 60 ? "ping-bueno" : (p.Ping < 120 ? "ping-medio" : "ping-malo"));
+
             fila.Add(nombre);
             fila.Add(puntaje);
             fila.Add(muertes);
+            fila.Add(ping);
             list.Add(fila);
         }
     }
