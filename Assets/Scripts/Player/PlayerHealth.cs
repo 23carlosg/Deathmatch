@@ -110,6 +110,18 @@ public class PlayerHealth : NetworkBehaviour
 
             if (ScoreboardState.Instance != null)
                 ScoreboardState.Instance.RegistrarKill(atacanteId, OwnerClientId);
+            
+            // Powerup por racha 
+            var propio = GetComponent<PlayerPowerup>();
+            if (propio != null) propio.RegistrarMuerte();
+
+            if (atacanteId != OwnerClientId
+                && NetworkManager.Singleton.ConnectedClients.TryGetValue(atacanteId, out var cliente)
+                && cliente.PlayerObject != null)
+            {
+                var del_asesino = cliente.PlayerObject.GetComponent<PlayerPowerup>();
+                if (del_asesino != null) del_asesino.RegistrarKill();
+            }
 
             StartCoroutine(RevivirAutomaticamenteCoroutine());
         }

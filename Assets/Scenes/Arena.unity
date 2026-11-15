@@ -54773,6 +54773,7 @@ GameObject:
   - component: {fileID: 1365752256}
   - component: {fileID: 1365752257}
   - component: {fileID: 1365752258}
+  - component: {fileID: 1365752259}
   m_Layer: 0
   m_Name: PauseMenu
   m_TagString: Untagged
@@ -54893,6 +54894,18 @@ MonoBehaviour:
   tecla: E
   texto: Recoger arma
   alcance: 5
+--- !u!114 &1365752259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1365752253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52b6cb46c1457c64e86b3089e39b7564, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PowerupUI
 --- !u!1 &1369745403
 GameObject:
   m_ObjectHideFlags: 0

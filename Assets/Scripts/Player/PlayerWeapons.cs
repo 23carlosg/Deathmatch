@@ -481,6 +481,9 @@ public class PlayerWeapons : NetworkBehaviour
     void DisparoEfectuadoClientRpc(Vector3 posicionDeLaBoca, Vector3 puntoFinal)
     {
         if (IsLocalPlayer) return;
+        var po = GetComponent<PlayerPowerup>();
+        if (po != null && po.Invisible.Value) return;   // invisible: sin efectos remotos
+
         recoilArma = 1f;
 
         // Usa la boca real de esta instancia (si existe) y la acerca si hay una pared de por medio
