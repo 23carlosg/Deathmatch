@@ -251,8 +251,6 @@ MonoBehaviour:
   sensibilidad: 2
   limiteVertical: 80
   rotacionVertical: 0
-  velocidadLibre: 10
-  multiplicadorRapido: 3
 --- !u!1 &526685094956421993
 GameObject:
   m_ObjectHideFlags: 0
@@ -1281,6 +1279,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   rachaNecesaria: 3
   duracion: 5
+  materialFantasma: {fileID: 2100000, guid: af68d8606e6e04b45a62ddb1b326b9d5, type: 2}
 --- !u!1 &2330306918595433097
 GameObject:
   m_ObjectHideFlags: 0

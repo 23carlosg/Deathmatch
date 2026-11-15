@@ -46,6 +46,8 @@ public class PlayerCameraRig : MonoBehaviour
     // Fundido: copias transparentes de los materiales (se crean la primera vez que hacen falta)
     Material[][] matsOriginales;
     Material[][] matsTransparentes;
+    Material[][] matsInicio;
+    Material fantasmaActual;
     Color[][] coloresBase;
     float alphaCuerpo = 1f;
     bool usandoTransparentes;
@@ -67,6 +69,9 @@ public class PlayerCameraRig : MonoBehaviour
             lista.Add(r);
         }
         renderersCuerpo = lista.ToArray();
+        matsInicio = new Material[renderersCuerpo.Length][];
+        for (int i = 0; i < renderersCuerpo.Length; i++)
+            matsInicio[i] = renderersCuerpo[i].sharedMaterials;
     }
 
     // ------------------------- POSICION DE LA CAMARA -------------------------
@@ -149,6 +154,34 @@ public class PlayerCameraRig : MonoBehaviour
         }
     }
 
+    // Lo llama PlayerPowerup: material fantasma para el cuerpo, o null para volver a lo normal
+    public void SetFantasma(Material m)
+    {
+        fantasmaActual = m;
+        if (renderersCuerpo == null || matsInicio == null) return;
+
+        for (int i = 0; i < renderersCuerpo.Length; i++)
+        {
+            Renderer r = renderersCuerpo[i];
+            if (r == null) continue;
+
+            if (m != null)
+            {
+                var mats = new Material[matsInicio[i].Length];
+                for (int j = 0; j < mats.Length; j++) mats[j] = m;
+                r.sharedMaterials = mats;
+            }
+            else
+            {
+                r.sharedMaterials = matsInicio[i];
+            }
+        }
+
+        // el fundido por pared arranca de cero al entrar o salir del fantasma
+        usandoTransparentes = false;
+        alphaCuerpo = 1f;
+    }
+
     // ------------------------- FUNDIDO DEL CUERPO -------------------------
 
     // Crea una copia transparente de cada material del cuerpo (URP/Lit)
@@ -209,7 +242,7 @@ public class PlayerCameraRig : MonoBehaviour
     // Lleva la opacidad del cuerpo hacia alphaCuerpoCerca (pegado a pared) o 1 (normal)
     void ActualizarFundidoCuerpo()
     {
-        if (renderersCuerpo == null) return;
+        if (renderersCuerpo == null || fantasmaActual != null) return;
 
         float objetivo = cuerpoOculto ? alphaCuerpoCerca : 1f;
 

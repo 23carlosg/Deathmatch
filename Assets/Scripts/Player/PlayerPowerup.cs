@@ -12,6 +12,9 @@ public class PlayerPowerup : NetworkBehaviour
 {
     [SerializeField] int rachaNecesaria = 3;
     [SerializeField] float duracion = 5f;
+    [Header("Efecto para el dueño")]
+    [SerializeField] Material materialFantasma; //arrastrar material del fantasma
+    readonly Dictionary<Renderer, Material[]> originales = new Dictionary<Renderer, Material[]>();
 
     public float Duracion => duracion;
     public string TeclaTexto => "Q";
@@ -53,12 +56,48 @@ public class PlayerPowerup : NetworkBehaviour
 
     void AlCambiarInvisible(bool anterior, bool actual) => AplicarVisibilidad(actual);
 
-    // En las copias remotas se oculta el cuerpo y el arma. El dueño se sigue viendo
+    // Los demas lo ven invisible y el dueño se sigue viendo
     void AplicarVisibilidad(bool invisible)
     {
-        if (IsLocalPlayer) return;
+        if (IsLocalPlayer)
+        {
+            AplicarFantasma(invisible);   // dueño se ve como fantasma
+            return;
+        }
         foreach (Renderer r in visibles)
             if (r != null) r.enabled = !invisible;
+    }
+
+    void AplicarFantasma(bool activo)
+    {
+        if (materialFantasma == null) return;
+
+        // Cuerpo: lo maneja PlayerCameraRig
+        if (jugador != null && jugador.CameraRig != null)
+            jugador.CameraRig.SetFantasma(activo ? materialFantasma : null);
+
+        // Arma: el rig no la toca, asi que se cambia aca
+        foreach (Renderer r in visibles)
+        {
+            if (r == null || r is ParticleSystemRenderer) continue;
+            if (jugador == null || !jugador.Weapons.EsParteDeUnArma(r.transform)) continue;
+
+            if (activo)
+            {
+                if (originales.ContainsKey(r)) continue;
+                Material[] actuales = r.sharedMaterials;
+                originales[r] = actuales;
+
+                Material[] fantasmas = new Material[actuales.Length];
+                for (int i = 0; i < fantasmas.Length; i++) fantasmas[i] = materialFantasma;
+                r.sharedMaterials = fantasmas;
+            }
+            else if (originales.TryGetValue(r, out Material[] guardados))
+            {
+                r.sharedMaterials = guardados;
+                originales.Remove(r);
+            }
+        }
     }
 
     // ------------------------- SERVIDOR -------------------------
