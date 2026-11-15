@@ -82,9 +82,8 @@ public class PlataformaCuracion : NetworkBehaviour
 
     void Curar(Collider jugador, float cantidad)
     {
-        // Corre solo en el servidor. Ejemplo:
-        // var vida = jugador.GetComponentInParent<Vida>();
-        // if (vida != null) vida.CurarServer(cantidad);
+        var vida = jugador.GetComponentInParent<PlayerHealth>();
+        if (vida != null) vida.Curar(cantidad);
     }
 
     void OnDrawGizmosSelected()

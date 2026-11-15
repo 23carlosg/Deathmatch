@@ -115,6 +115,15 @@ public class PlayerHealth : NetworkBehaviour
         }
     }
 
+    //Recuperacion de salud
+    public void Curar(float cantidad)
+    {
+        if (!IsServer || Muerto || redSalud.Value <= 0f) return;
+        if (redSalud.Value >= saludMaxima) return;
+
+        redSalud.Value = Mathf.Min(saludMaxima, redSalud.Value + cantidad);
+    }
+
     // ------------------------- MORIR / REVIVIR -------------------------
 
     // Muerte pidiendo el daño por el camino de red (lo aplica el servidor)
