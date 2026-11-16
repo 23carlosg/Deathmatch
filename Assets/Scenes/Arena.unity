@@ -30518,7 +30518,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlataformaCuracion
   ShowTopMostFoldoutHeaderGroup: 1
-  alturaMaxima: 29.9
+  alturaMaxima: 20
   velocidad: 3
   tagJugador: Player
   tamanoZona: {x: 3.6, y: 1.5, z: 3.6}

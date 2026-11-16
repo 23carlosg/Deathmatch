@@ -64,7 +64,7 @@ public class PlataformaCuracion : NetworkBehaviour
 
     int ContarJugadores()
     {
-        // Ojo: usa la altura sincronizada para que la zona siga a la plataforma
+        // Usa la altura sincronizada para que la zona siga a la plataforma
         Vector3 centro = new Vector3(transform.position.x,
                                      alturaActual.Value + alturaZona,
                                      transform.position.z);
