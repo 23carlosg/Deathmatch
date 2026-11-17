@@ -1,14 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class Hotbar : MonoBehaviour
 {
     public Transform hotBarSlotContainer;
-
-    [Header("Debug")]
-    public ItemData itemDev;
-    public ItemData itemDev2;
 
     private List<Slot> slots = new List<Slot>();
 
@@ -24,21 +19,10 @@ public class Hotbar : MonoBehaviour
         Debug.Log("Hotbar inicializada con " + slots.Count + " slots");
     }
 
-    void Update()
-    {
-        if (Keyboard.current.f1Key.wasPressedThisFrame)
-        {
-            AddItem(itemDev);
-        }
-
-        if (Keyboard.current.f2Key.wasPressedThisFrame)
-        {
-            AddItem(itemDev2);
-        }
-    }
-
     public int AddItem(ItemData itemData)
     {
+        if (itemData == null) return -1;
+
         int slotFijo = GetSlotFijo(itemData);
 
         // Si el item tiene un slot fijo asignado (pistola/rifle), va directo ahí

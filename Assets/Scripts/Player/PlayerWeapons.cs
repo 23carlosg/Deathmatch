@@ -190,21 +190,6 @@ public class PlayerWeapons : NetworkBehaviour
         apuntando = false;
     }
 
-    public void Recargar()
-    {
-        if (armaActual == 3) return; // Desarmado: no puede recargar
-        if (recargando)
-        {
-            if (Time.time >= recargaHasta) recargando = false;
-            return;
-        }
-        if (Keyboard.current.rKey.wasPressedThisFrame)
-        {
-            recargando = true;
-            recargaHasta = Time.time + 1.8f;
-        }
-    }
-
     // ------------------------- RETROCESO DEL ARMA -------------------------
 
     void GuardarPoseDeReposoDeLasArmas()
@@ -346,7 +331,7 @@ public class PlayerWeapons : NetworkBehaviour
             jugador.controlCamara.rotacionVertical -= apuntando ? retrocesoActual * 0.7f : retrocesoActual;
     }
 
-    // Boca del arma que tenes en la mano (cada arma puede tener la suya)
+    // Boca del arma que tenes en la mano
     Transform BocaActual()
     {
         if (armaActual == 2 && bocaPistola != null) return bocaPistola;
@@ -361,9 +346,9 @@ public class PlayerWeapons : NetworkBehaviour
         return transform.TransformPoint(new Vector3(0.25f, 1.35f, 0.7f));
     }
 
-    // Si hay una pared entre el pecho del jugador y la boca del arma (arma metida en el muro),
+    // Si hay una pared entre el pecho del jugador y la boca del arma,
     // devuelve un punto justo antes de la pared, del lado del jugador.
-    // Usa la misma mascara que la camara (Capas Colision Camara en PlayerCameraRig).
+    // Usa la misma mascara que la camara.
     Vector3 AjustarBocaPorPared(Vector3 boca)
     {
         CharacterController controller = jugador.Controller;
@@ -399,8 +384,7 @@ public class PlayerWeapons : NetworkBehaviour
             ? Instantiate(efectoDisparo, boca.position, boca.rotation, boca)
             : Instantiate(efectoDisparo, posicion, boca != null ? boca.rotation : Quaternion.identity);
 
-        // Arma pegada a una pared: se quitan las chispas (Particle Systems hijos) para que no
-        // atraviesen el muro. Quedan el destello y la luz, que son el sistema raiz.
+        // Arma pegada a una pared: se quitan las chispas para que no atraviesen el muro. Quedan el destello y la luz, que son el sistema raiz.
         if (!pegada)
         {
             foreach (ParticleSystem ps in fx.GetComponentsInChildren<ParticleSystem>(true))

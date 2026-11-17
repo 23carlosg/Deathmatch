@@ -221,7 +221,6 @@ public class PlayerNetworkMovement : NetworkBehaviour
         {
             weapons.LeerCambioDeArma();
             weapons.LeerApuntar();
-            weapons.Recargar();
         }
         else weapons.ForzarNoApuntar();
 
