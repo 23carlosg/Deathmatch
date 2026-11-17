@@ -1,21 +1,22 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 public class OpenDoor : NetworkBehaviour
 {
     [SerializeField] private Animator animator;
-    [SerializeField] private string[] validTags = { "Player", "Wheelbot"};
+    [SerializeField] private string[] validTags = { "Player", "Wheelbot" };
 
     private static readonly int CharacterNearby = Animator.StringToHash("character_nearby");
 
-    // Solo el servidor escribe; todos leen
     private readonly NetworkVariable<bool> isOpen = new NetworkVariable<bool>(
         false,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 
-    // Cantidad de personajes dentro del trigger (solo se usa en el servidor)
-    private int occupants;
+    // Solo servidor: colliders actualmente dentro del trigger
+    private readonly HashSet<Collider> occupants = new HashSet<Collider>();
+    private readonly List<Collider> toRemove = new List<Collider>();
 
     private void Awake()
     {
@@ -26,12 +27,13 @@ public class OpenDoor : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         isOpen.OnValueChanged += OnDoorStateChanged;
-        animator.SetBool(CharacterNearby, isOpen.Value); // estado actual (late join)
+        animator.SetBool(CharacterNearby, isOpen.Value);
     }
 
     public override void OnNetworkDespawn()
     {
         isOpen.OnValueChanged -= OnDoorStateChanged;
+        occupants.Clear();
     }
 
     private void OnDoorStateChanged(bool previous, bool current)
@@ -42,18 +44,32 @@ public class OpenDoor : NetworkBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!IsServer || !IsValidCharacter(other)) return;
-
-        occupants++;
-        isOpen.Value = true;
+        occupants.Add(other);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!IsServer || !IsValidCharacter(other)) return;
+        if (!IsServer) return;
+        occupants.Remove(other);
+    }
 
-        occupants = Mathf.Max(0, occupants - 1);
-        if (occupants == 0)
-            isOpen.Value = false;
+    private void FixedUpdate()
+    {
+        if (!IsServer) return;
+
+        // Limpiar colliders destruidos / desactivados / de personajes muertos
+        toRemove.Clear();
+        foreach (var col in occupants)
+        {
+            if (col == null || !col.enabled || !col.gameObject.activeInHierarchy)
+                toRemove.Add(col);
+        }
+        foreach (var col in toRemove)
+            occupants.Remove(col);
+
+        bool shouldBeOpen = occupants.Count > 0;
+        if (isOpen.Value != shouldBeOpen)
+            isOpen.Value = shouldBeOpen;
     }
 
     private bool IsValidCharacter(Collider other)
