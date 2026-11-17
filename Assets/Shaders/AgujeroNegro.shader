@@ -111,7 +111,7 @@ Shader "Custom/AgujeroNegro"
                 float t = _Time.y * _Velocidad;
 
                 // el quad se recorta en un circulo suave para que no se vea el cuadrado
-                float bordeQuad = smoothstep(1.0, 0.92, r);
+                float bordeQuad = smoothstep(1.0, 0.01, r);
 
                 // ---------- LENTE GRAVITACIONAL ----------
                 // La luz del fondo se curva hacia el agujero: se toma el color de un punto mas
